@@ -5,13 +5,13 @@ import {
   Route,
   Navigate } from
 'react-router-dom';
-import { useAuthProvider, AuthContext } from './hooks/useAuth';
-import { Navbar } from './components/layout/Navbar';
-import { LoginPage } from './pages/shared/LoginPage';
-import { ParentDashboard } from './pages/parent/ParentDashboard';
-import { DriverDashboard } from './pages/driver/DriverDashboard';
-import { AdminDashboard } from './pages/admin/AdminDashboard';
-import { RegisterReq} from './pages/shared/registerReq';
+//import { useAuthProvider, AuthContext } from './hooks/useAuth';
+//import { Navbar } from './components/layout/Navbar';
+//import { LoginPage } from './pages/shared/LoginPage';
+//import { ParentDashboard } from './pages/parent/ParentDashboard';
+//import { DriverDashboard } from './pages/driver/DriverDashboard';
+//import { AdminDashboard } from './pages/admin/AdminDashboard';
+//import { RegisterReq} from './pages/shared/registerReq';
 function ProtectedRoute({
   children,
   allowedRole
