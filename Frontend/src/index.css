@@ -1,0 +1,29 @@
+/* URL IMPORTS (SUCH AS FONT IMPORTS) SHOULD BE KEPT ABOVE TAILWIND IMPORTS - DO NOT DELETE THIS COMMENT */
+
+/* PLEASE NOTE: THESE TAILWIND IMPORTS SHOULD NEVER BE DELETED - DO NOT DELETE THIS COMMENT */
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+/* DO NOT DELETE THESE TAILWIND IMPORTS, OTHERWISE THE STYLING WILL NOT RENDER AT ALL - DO NOT DELETE THIS COMMENT */
+
+
+.glass {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(50px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  border-radius: 1rem;
+}
+
+
+.glass:hover {
+  border-color: rgba(255, 255, 255, 1); /* sharp white border */
+  background-color: rgba(255, 255, 255, 0.36);
+  backdrop-filter: blur(90px);
+  box-shadow:
+    0 0 8px 2px rgba(255, 255, 255, 0.6),   /* soft white glow */
+    0 0 15px 5px rgba(255, 255, 255, 0.4);  /* stronger outer glow */
+  transition: border-color 0.2s ease, box-shadow 0.3s ease, background 0.3s ease;
+}
+
