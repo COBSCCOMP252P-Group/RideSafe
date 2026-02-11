@@ -11,3 +11,8 @@ class RouteStop(Base):
     latitude = Column(DECIMAL(9, 6))
     longitude = Column(DECIMAL(9, 6))
     stop_order = Column(Integer)
+
+    # Relationships
+    route = relationship("Route", back_populates="stops")
+    pickup_students = relationship("StudentRoute", foreign_keys="[StudentRoute.pickup_stop_id]", back_populates="pickup_stop")
+    dropoff_students = relationship("StudentRoute", foreign_keys="[StudentRoute.dropoff_stop_id]", back_populates="dropoff_stop")
