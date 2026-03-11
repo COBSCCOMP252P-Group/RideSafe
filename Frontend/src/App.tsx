@@ -82,7 +82,7 @@ export function App() {
 
             <Route path="/" element={<Navigate to="/login" />} />
 
-            <Route path="/register-req" element={<RegisterReq />} />
+            <Route path="/registerReq" element={<RegisterReq />} />
           </Routes>
         </div>
       </Router>
