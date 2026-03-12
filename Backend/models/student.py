@@ -6,7 +6,6 @@ from models.user import Base
 class StudentStatus(str, enum.Enum):
     ACTIVE = "active"
     INACTIVE = "inactive"
-    GRADUATED = "graduated"
 
 class Student(Base):
     __tablename__ = "students"

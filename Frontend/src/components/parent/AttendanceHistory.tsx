@@ -4,67 +4,79 @@ import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { MOCK_ATTENDANCE_HISTORY } from '../../utils/mockData';
 import { Calendar } from 'lucide-react';
+
 export function AttendanceHistory() {
+
   return (
-    <Card title="Attendance History">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+
+    <Card title="Attendance History" className="bg-white/90 backdrop-blur-md shadow-lg">
+
+      <div className="overflow-x-auto rounded-2xl border border-gray-200">
+
+        <table className="min-w-full border-separate border-spacing-0">
+
+          {/* Header */}
+          <thead className="bg-gradient-to-r from-purple-100 via-purple-200 to-purple-100 text-gray-700 text-xs uppercase tracking-wider">
             <tr>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-
-                Date
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-
-                Status
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-
-                Check In
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-
-                Check Out
-              </th>
+              <th className="px-6 py-3 text-left font-semibold rounded-tl-xl">Date</th>
+              <th className="px-6 py-3 text-left font-semibold">Status</th>
+              <th className="px-6 py-3 text-left font-semibold">Check In</th>
+              <th className="px-6 py-3 text-left font-semibold rounded-tr-xl">Check Out</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {MOCK_ATTENDANCE_HISTORY.slice(0, 5).map((record) =>
-            <tr key={record.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+
+          {/* Body */}
+          <tbody>
+
+            {MOCK_ATTENDANCE_HISTORY.slice(0, 5).map((record, idx) => (
+              <tr
+                key={record.id}
+                className={`transition-all duration-200 ${idx % 2 === 0 ? 'bg-purple-50' : 'bg-white'} hover:shadow-md hover:scale-[1.01] rounded-lg`}
+              >
+
+                {/* Date */}
+                <td className="px-6 py-4 text-sm text-gray-800">
                   <div className="flex items-center">
-                    <Calendar className="h-4 w-4 text-gray-400 mr-2" />
-                    {new Date(record.date).toLocaleDateString()}
+                    <div className="h-8 w-8 rounded-lg bg-purple-200 flex items-center justify-center mr-3">
+                      <Calendar className="h-4 w-4 text-purple-700" />
+                    </div>
+                    <span className="font-medium">{new Date(record.date).toLocaleDateString()}</span>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <Badge
-                  variant={record.status === 'present' ? 'success' : 'danger'}>
 
-                    {record.status.charAt(0).toUpperCase() +
-                  record.status.slice(1)}
+                {/* Status */}
+                <td className="px-6 py-4">
+                  <Badge
+                    variant={
+                      record.status === 'present'
+                        ? 'success'
+                        : record.status === 'absent'
+                        ? 'danger'
+                        : 'secondary'
+                    }
+                    className="px-3 py-1 text-sm"
+                  >
+                    {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
                   </Badge>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {record.checkIn || '-'}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {record.checkOut || '-'}
-                </td>
+
+                {/* Check In */}
+                <td className="px-6 py-4 text-sm text-gray-700 font-medium">{record.checkIn || '-'}</td>
+
+                {/* Check Out */}
+                <td className="px-6 py-4 text-sm text-gray-700 font-medium">{record.checkOut || '-'}</td>
+
               </tr>
-            )}
+            ))}
+
           </tbody>
+
         </table>
+
       </div>
-    </Card>);
+
+    </Card>
+
+  );
 
 }
