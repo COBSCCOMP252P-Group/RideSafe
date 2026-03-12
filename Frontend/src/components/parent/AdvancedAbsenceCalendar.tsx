@@ -116,7 +116,7 @@ export function AdvancedAbsenceCalendar() {
                   disabled={isScheduled || dateInfo.isWeekend}
                   className={`
                       relative p-3 rounded-xl text-center transition-all duration-200
-                      ${isSelected ? 'bg-gradient-to-br from-primary-600 to-primary-700 text-white shadow-lg shadow-primary-500/30' : isScheduled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : dateInfo.isWeekend ? 'bg-gray-50 text-gray-300 cursor-not-allowed' : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-primary-300 hover:bg-primary-50'}
+                      ${isSelected ? 'bg-gradient-to-br from-primary-300 to-primary-500 text-white shadow-lg shadow-primary-500/30' : isScheduled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : dateInfo.isWeekend ? 'bg-gray-50 text-gray-300 cursor-not-allowed' : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-primary-300 hover:bg-primary-100'}
                     `}>
 
                     <div className="text-xs font-medium opacity-75">
