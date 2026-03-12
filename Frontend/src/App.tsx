@@ -86,6 +86,7 @@ export function App() {
             <Route path="/register-req" element={<RegisterReq />} />
 
             <Route path="/map" element={<MapPage />} />
+            <Route path="/registerReq" element={<RegisterReq />} />
           </Routes>
         </div>
       </Router>
