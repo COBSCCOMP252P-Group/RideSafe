@@ -1,3 +1,6 @@
+from click import DateTime
+from wrapt import Boolean
+
 from sqlalchemy import Column, Integer, String, ForeignKey, Date, Text, Enum
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -17,6 +20,14 @@ class Absence(Base):
     date = Column(Date)
     reason = Column(Text)
     status = Column(String(20), default=AbsenceStatus.PENDING)
+
+    approved_by = Column(Integer, ForeignKey("users.user_id"))
+    approval_date=Column(DateTime, nullable=True)
+
+    reported_at =Column(DateTime,default=func.now())
+    is_excused = Column(Boolean, default=False)
+
     
     # Relationships
     student = relationship("Student", back_populates="absences")
+    approved_by_user = relationship("User")
