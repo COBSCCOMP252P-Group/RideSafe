@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
+from Backend.models.absence import Absence
 from sqlalchemy.orm import Session
 from datetime import datetime, date, time, timedelta
 from typing import List, Optional
@@ -61,6 +62,23 @@ class AttendanceSummary(BaseModel):
     late_days: int
     attendance_percentage: float
 
+
+
+class AbsenceRequest(BaseModel):
+    student_id: int
+    date: date
+    reason: str
+
+class AbsenceResponse(BaseModel):
+    absence_id: int
+    student_id: int
+    date: date
+    reason: str
+    status: str
+    reported_at: datetime
+
+    class Config:
+        from_attributes = True
 
 #Helper functions for cheking chekout 
 
@@ -304,3 +322,46 @@ async def mark_missed_pickups(
         "message": f"Marked {marked_count} students as NO_SHOW on route {route_id}",
         "marked_count": marked_count
     }
+
+
+#Absence reporting endpoint
+@router.post("/absence", response_model=AbsenceResponse)
+async def report_absence(
+    request: AbsenceRequest,
+    current_user = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Report absence for a student
+    - Parents can report for their children
+    - Sets status to PENDING (awaiting admin approval)
+    - Reason is required
+    """
+    # Verify student exists
+    student = db.query(Student).filter(Student.student_id == request.student_id).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    # Check for duplicate report
+    existing = db.query(Absence).filter(
+        Absence.student_id == request.student_id,
+        Absence.date == request.date
+    ).first()
+
+    if existing:
+        raise HTTPException(status_code=400, detail="Absence already reported for this date")
+
+    # Create absence record
+    absence = Absence(
+        student_id=request.student_id,
+        date=request.date,
+        reason=request.reason,
+        status=AbsenceStatus.PENDING
+    )
+
+    db.add(absence)
+    db.commit()
+    db.refresh(absence)
+
+    return absence
+
