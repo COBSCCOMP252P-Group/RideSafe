@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from Backend.models.absence import Absence
+from Backend.models.absence import Absence, AbsenceStatus
 from sqlalchemy.orm import Session
 from datetime import datetime, date, time, timedelta
 from typing import List, Optional
@@ -364,4 +364,39 @@ async def report_absence(
     db.refresh(absence)
 
     return absence
+
+    
+# Get student absences endpoint
+@router.get("/absences/{student_id}")
+async def get_student_absences(
+    student_id: int,
+    current_user = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+   
+    # Verify student exists
+    student = db.query(Student).filter(Student.student_id == student_id).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    # Get all absences for this student
+    absences = db.query(Absence).filter(
+        Absence.student_id == student_id
+    ).order_by(Absence.date.desc()).all()
+
+    return absences
+
+# Get pending absences endpoint
+@router.get("/absences/pending")
+async def get_pending_absences(
+    current_user = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+   
+    # Note: Add admin role check here
+    absences = db.query(Absence).filter(
+        Absence.status == AbsenceStatus.PENDING
+    ).order_by(Absence.reported_at.desc()).all()
+
+    return absences
 
