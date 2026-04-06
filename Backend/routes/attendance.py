@@ -400,3 +400,70 @@ async def get_pending_absences(
 
     return absences
 
+# admin approval endpoint
+@router.put("/absences/{absence_id}/approve")
+async def approve_absence(
+    absence_id: int,
+    current_user = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+   
+    # Find the absence
+    absence = db.query(Absence).filter(Absence.absence_id == absence_id).first()
+    if not absence:
+        raise HTTPException(status_code=404, detail="Absence not found")
+
+    # Check if already processed
+    if absence.status != AbsenceStatus.PENDING:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Absence already {absence.status}. Only pending absences can be approved."
+        )
+
+    # Approve the absence
+    absence.status = AbsenceStatus.APPROVED
+    absence.approved_by = current_user.user_id
+    absence.approval_date = datetime.now()
+    absence.is_excused = True
+
+    db.commit()
+    db.refresh(absence)
+
+    return {
+        "message": "Absence approved successfully",
+        "absence": absence
+    }
+
+# admin rejection endpoint
+@router.put("/absences/{absence_id}/reject")
+async def reject_absence(
+    absence_id: int,
+    current_user = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    
+    # Find the absence
+    absence = db.query(Absence).filter(Absence.absence_id == absence_id).first()
+    if not absence:
+        raise HTTPException(status_code=404, detail="Absence not found")
+
+    # Check if already processed
+    if absence.status != AbsenceStatus.PENDING:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Absence already {absence.status}. Only pending absences can be rejected."
+        )
+
+    # Reject the absence
+    absence.status = AbsenceStatus.REJECTED
+    absence.approved_by = current_user.user_id
+    absence.approval_date = datetime.now()
+    # is_excused remains False
+
+    db.commit()
+    db.refresh(absence)
+
+    return {
+        "message": "Absence rejected successfully",
+        "absence": absence
+    }
