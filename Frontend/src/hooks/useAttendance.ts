@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { AttendanceHistoryResponse, AttendanceSummary } from '../types';
 
+
 export interface CheckInRequest {
   student_id: number;
   bus_id: number;
@@ -76,9 +77,65 @@ export function useAttendance() {
       setLoading(false);
     }
   };
-return{
-  checkIn,
-  checkOut,
-  loading,
-  error
-};}
+  const getAttendanceHistory = async (studentId: number, days: number = 30): Promise<AttendanceHistoryResponse[]> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/v1/attendance/history/${studentId}?days=${days}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch attendance history');
+      }
+
+      return await response.json();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch attendance history');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getAttendanceSummary = async (
+    studentId: number,
+    startDate: string,
+    endDate: string
+  ): Promise<AttendanceSummary> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `/api/v1/attendance/summary/${studentId}?start_date=${startDate}&end_date=${endDate}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch attendance summary');
+      }
+
+      return await response.json();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch attendance summary');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return {
+    checkIn,
+    checkOut,
+    getAttendanceHistory,
+    getAttendanceSummary,
+    loading,
+    error
+  };
+}

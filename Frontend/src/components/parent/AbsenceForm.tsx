@@ -5,19 +5,38 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
 import { Select } from '../ui/Select';
-import { MOCK_STUDENTS } from '../../utils/mockData';
+import { useAttendance } from '../../hooks/useAttendance';
 export function AbsenceForm() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState('');
+  const [date, setDate] = useState('');
+  const [reason, setReason] = useState('');
+  const [additionalNotes, setAdditionalNotes] = useState('');
+  const { reportAbsence, loading, error } = useAttendance();
   const [success, setSuccess] = useState(false);
-  const handleSubmit = (e: React.FormEvent) => {
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
+
+    if (!selectedStudent || !date || !reason) {
+      return;
+    }
+
+    try {
+      await reportAbsence({
+        student_id: parseInt(selectedStudent),
+        date: date,
+        reason: reason + (additionalNotes ? ` - ${additionalNotes}` : '')
+      });
+
       setSuccess(true);
+      setSelectedStudent('');
+      setDate('');
+      setReason('');
+      setAdditionalNotes('');
       setTimeout(() => setSuccess(false), 3000);
-    }, 1000);
+    } catch (err) {
+      // Error is handled by the hook
+    }
   };
   return (
     <Card title="Report Absence">
