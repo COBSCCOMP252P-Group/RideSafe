@@ -2,10 +2,25 @@
 import React from 'react';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
-import { MOCK_ATTENDANCE_HISTORY } from '../../utils/mockData';
-import { Calendar } from 'lucide-react';
+import { useAttendance } from '../../hooks/useAttendance';
+import { useState, useEffect } from 'react';
 
 export function AttendanceHistory() {
+
+  const { getAttendanceHistory, loading } = useAttendance();
+  const [history, setHistory] = useState([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await getAttendanceHistory(1, 30); // student_id = 1
+        setHistory(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    loadData();
+  }, []);
 
   return (
 
@@ -28,7 +43,7 @@ export function AttendanceHistory() {
           {/* Body */}
           <tbody>
 
-            {MOCK_ATTENDANCE_HISTORY.slice(0, 5).map((record, idx) => (
+            {history.slice(0, 5).map((record, idx) => (
               <tr
                 key={record.id}
                 className={`transition-all duration-200 ${idx % 2 === 0 ? 'bg-purple-50' : 'bg-white'} hover:shadow-md hover:scale-[1.01] rounded-lg`}

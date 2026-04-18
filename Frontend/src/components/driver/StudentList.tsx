@@ -5,9 +5,12 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { MOCK_STUDENTS } from '../../utils/mockData';
 import { Check, LogOut, Phone } from 'lucide-react';
+import { useAttendance } from '../../hooks/useAttendance';
 export function StudentList() {
   // Local state to simulate check-in/out updates
   const [students, setStudents] = useState(MOCK_STUDENTS);
+  const { checkIn, checkOut } = useAttendance();
+
   const handleStatusChange = (
   id: string,
   newStatus: 'on_bus' | 'at_school' | 'at_home') =>
@@ -23,6 +26,22 @@ export function StudentList() {
     )
     );
   };
+
+  const handleBoard = async (studentId) => {
+    await checkIn({
+      student_id: studentId,
+      bus_id: 1,  // Get from current route
+      route_id: 1
+    });
+  };
+
+  const handleDrop = async (studentId) => {
+    await checkOut({
+      student_id: studentId,
+      bus_id: 1
+    });
+  };
+
   return (
     <Card title="Student Manifest - Route A" className="h-full">
       <div className="space-y-4">

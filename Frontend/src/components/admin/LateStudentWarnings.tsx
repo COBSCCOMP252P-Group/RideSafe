@@ -14,6 +14,9 @@ import {
   Bell,
   Mail } from
 'lucide-react';
+import { useAttendance } from '../../hooks/useAttendance';
+import { useState, useEffect } from 'react';
+
 export function LateStudentWarnings() {
   const getTrendIcon = (trend: string) => {
     switch (trend) {
@@ -40,6 +43,12 @@ export function LateStudentWarnings() {
     if (percentage >= 10) return <Badge variant="warning">Moderate</Badge>;
     return <Badge variant="neutral">Low</Badge>;
   };
+  const [attendanceData, setAttendanceData] = useState<Attendance[]>([]);
+  useEffect(() => {
+    // Simulate fetching attendance data
+    setAttendanceData(MOCK_LATE_PATTERNS);
+  }, []);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -67,7 +76,7 @@ export function LateStudentWarnings() {
               </p>
               <p className="text-3xl font-bold text-red-900 mt-1">
                 {
-                MOCK_LATE_PATTERNS.filter((p) => p.latePercentage >= 20).
+                attendanceData.filter((p) => p.latePercentage >= 20).
                 length
                 }
               </p>
@@ -86,7 +95,7 @@ export function LateStudentWarnings() {
               </p>
               <p className="text-3xl font-bold text-yellow-900 mt-1">
                 {
-                MOCK_LATE_PATTERNS.filter(
+                attendanceData.filter(
                   (p) => p.latePercentage >= 10 && p.latePercentage < 20
                 ).length
                 }
@@ -104,10 +113,10 @@ export function LateStudentWarnings() {
               <p className="text-sm font-medium text-blue-700">Avg Delay</p>
               <p className="text-3xl font-bold text-blue-900 mt-1">
                 {Math.round(
-                  MOCK_LATE_PATTERNS.reduce(
+                  attendanceData.reduce(
                     (sum, p) => sum + p.averageDelayMinutes,
                     0
-                  ) / MOCK_LATE_PATTERNS.length
+                  ) / attendanceData.length
                 )}
                 m
               </p>
@@ -122,7 +131,7 @@ export function LateStudentWarnings() {
       {/* Student List */}
       <Card title="Students Requiring Attention">
         <div className="space-y-4">
-          {MOCK_LATE_PATTERNS.map((pattern, index) =>
+          {attendanceData.map((pattern, index) =>
           <motion.div
             key={pattern.studentId}
             initial={{

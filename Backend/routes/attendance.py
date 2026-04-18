@@ -1,16 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from Backend.models.absence import Absence, AbsenceStatus
-from sqlalchemy.orm import Session
+from models.absence import Absence, AbsenceStatus
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from datetime import datetime, date, time, timedelta
 from typing import List, Optional
 from pydantic import BaseModel
 
 from models.attendance import Attendance, AttendanceStatus
-
 from models.student import Student
 from models.student_route import StudentRoute
-from models.route import RouteStop
-from auth.dependencies import get_current_user, get_db
+
+from auth.dependencies import login_required
+from database import get_db
 
 router = APIRouter(prefix="/api/v1/attendance", tags=["attendance"])
 
@@ -90,12 +91,15 @@ def check_if_late(check_in_time: datetime, expected_time: Optional[time]) -> boo
     return check_in_only > expected_time
 
 
-def get_expected_pickup_time(db: Session, student_id: int, route_id: int) -> Optional[time]:
+async def get_expected_pickup_time(db: AsyncSession, student_id: int, route_id: int) -> Optional[time]:
     
-    student_route = db.query(StudentRoute).filter(
-        StudentRoute.student_id == student_id,
-        StudentRoute.route_id == route_id
-    ).first()
+    result = await db.execute(
+        select(StudentRoute).where(
+            StudentRoute.student_id == student_id,
+            StudentRoute.route_id == route_id
+        )
+    )
+    student_route = result.scalar_one_or_none()
 
     if student_route and student_route.pickup_stop:
         return student_route.pickup_stop.expected_time
@@ -105,38 +109,47 @@ def get_expected_pickup_time(db: Session, student_id: int, route_id: int) -> Opt
 @router.post("/checkin", response_model=AttendanceResponse)
 async def check_in(
     request: CheckInRequest,
-    current_user = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user = Depends(login_required),
+    db: AsyncSession = Depends(get_db)
 ):
 
 
     # Verify student exists
-    student = db.query(Student).filter(Student.student_id == request.student_id).first()
+    result = await db.execute(
+        select(Student).where(Student.student_id == request.student_id)
+    )
+    student = result.scalar_one_or_none()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
     # Check if student is assigned to this route
-    student_route = db.query(StudentRoute).filter(
-        StudentRoute.student_id == request.student_id,
-        StudentRoute.route_id == request.route_id
-    ).first()
+    result = await db.execute(
+        select(StudentRoute).where(
+            StudentRoute.student_id == request.student_id,
+            StudentRoute.route_id == request.route_id
+        )
+    )
+    student_route = result.scalar_one_or_none()
 
     if not student_route:
         raise HTTPException(status_code=400, detail="Student not assigned to this route")
 
     # Check already checked in today
     today = date.today()
-    existing = db.query(Attendance).filter(
-        Attendance.student_id == request.student_id,
-        Attendance.route_id == request.route_id,
-        Attendance.date == today
-    ).first()
+    result = await db.execute(
+        select(Attendance).where(
+            Attendance.student_id == request.student_id,
+            Attendance.route_id == request.route_id,
+            Attendance.date == today
+        )
+    )
+    existing = result.scalar_one_or_none()
 
     if existing and existing.check_in_time:
         raise HTTPException(status_code=400, detail="Student already checked in today")
 
     # Get expected pickup time 
-    expected_time = get_expected_pickup_time(db, request.student_id, request.route_id)
+    expected_time = await get_expected_pickup_time(db, request.student_id, request.route_id)
 
     # update record
     if existing:
@@ -158,8 +171,8 @@ async def check_in(
         )
         db.add(attendance)
 
-    db.commit()
-    db.refresh(attendance)
+    await db.commit()
+    await db.refresh(attendance)
     return attendance
 
 
@@ -167,13 +180,16 @@ async def check_in(
 
 
 ## atendance summary helper function
-def get_attendance_summary(db: Session, student_id: int, start_date: date, end_date: date) -> AttendanceSummary:
+async def get_attendance_summary(db: AsyncSession, student_id: int, start_date: date, end_date: date) -> AttendanceSummary:
     """Calculate attendance statistics for a student"""
-    records = db.query(Attendance).filter(
-        Attendance.student_id == student_id,
-        Attendance.date >= start_date,
-        Attendance.date <= end_date
-    ).all()
+    result = await db.execute(
+        select(Attendance).where(
+            Attendance.student_id == student_id,
+            Attendance.date >= start_date,
+            Attendance.date <= end_date
+        )
+    )
+    records = result.scalars().all()
 
     total_days = len(records)
     present_days = len([r for r in records if r.status == AttendanceStatus.PRESENT])
@@ -197,20 +213,23 @@ def get_attendance_summary(db: Session, student_id: int, start_date: date, end_d
 @router.post("/checkout", response_model=AttendanceResponse)
 async def check_out(
     request: CheckOutRequest,
-    current_user = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user = Depends(login_required),
+    db: AsyncSession = Depends(get_db)
 ):
     
 
     today = date.today()
 
     # Find attendance record
-    attendance = db.query(Attendance).filter(
-        Attendance.student_id == request.student_id,
-        Attendance.bus_id == request.bus_id,
-        Attendance.date == today,
-        Attendance.check_in_time != None  # Must have checked in
-    ).first()
+    result = await db.execute(
+        select(Attendance).where(
+            Attendance.student_id == request.student_id,
+            Attendance.bus_id == request.bus_id,
+            Attendance.date == today,
+            Attendance.check_in_time != None  # Must have checked in
+        )
+    )
+    attendance = result.scalar_one_or_none()
 
     if not attendance:
         raise HTTPException(status_code=404, detail="No check-in record found for today")
@@ -220,8 +239,8 @@ async def check_out(
 
     # Record time
     attendance.check_out_time = datetime.now()
-    db.commit()
-    db.refresh(attendance)
+    await db.commit()
+    await db.refresh(attendance)
 
     return attendance
 
@@ -230,12 +249,15 @@ async def check_out(
 async def get_attendance_history(
     student_id: int,
     days: int = Query(30, ge=1, le=365),
-    current_user = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user = Depends(login_required),
+    db: AsyncSession = Depends(get_db)
 ):
    
     # Verify student exists
-    student = db.query(Student).filter(Student.student_id == student_id).first()
+    result = await db.execute(
+        select(Student).where(Student.student_id == student_id)
+    )
+    student = result.scalar_one_or_none()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
@@ -244,11 +266,14 @@ async def get_attendance_history(
     start_date = end_date - timedelta(days=days)
 
     # Get attendance records
-    records = db.query(Attendance).filter(
-        Attendance.student_id == student_id,
-        Attendance.date >= start_date,
-        Attendance.date <= end_date
-    ).order_by(Attendance.date.desc()).all()
+    result = await db.execute(
+        select(Attendance).where(
+            Attendance.student_id == student_id,
+            Attendance.date >= start_date,
+            Attendance.date <= end_date
+        ).order_by(Attendance.date.desc())
+    )
+    records = result.scalars().all()
 
     return records
 
@@ -259,14 +284,14 @@ async def get_attendance_summary_endpoint(
     student_id: int,
     start_date: date = Query(...),
     end_date: date = Query(...),
-    current_user = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user = Depends(login_required),
+    db: AsyncSession = Depends(get_db)
 ):
     
     if start_date > end_date:
         raise HTTPException(status_code=400, detail="start_date must be before end_date")
 
-    summary = get_attendance_summary(db, student_id, start_date, end_date)
+    summary = await get_attendance_summary(db, student_id, start_date, end_date)
     return summary
 
 
@@ -274,8 +299,8 @@ async def get_attendance_summary_endpoint(
 @router.post("/mark-missed-pickups/{route_id}")
 async def mark_missed_pickups(
     route_id: int,
-    current_user = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user = Depends(login_required),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Auto-mark students as NO_SHOW if they didn't board
@@ -284,25 +309,32 @@ async def mark_missed_pickups(
     """
     # Get route details
     from models.route import Route
-    route = db.query(Route).filter(Route.route_id == route_id).first()
+    result = await db.execute(
+        select(Route).where(Route.route_id == route_id)
+    )
+    route = result.scalar_one_or_none()
     if not route:
         raise HTTPException(status_code=404, detail="Route not found")
     
     # Get all students on this route
-    student_routes = db.query(StudentRoute).filter(
-        StudentRoute.route_id == route_id
-    ).all()
+    result = await db.execute(
+        select(StudentRoute).where(StudentRoute.route_id == route_id)
+    )
+    student_routes = result.scalars().all()
     
     today = date.today()
     marked_count = 0
     
     for sr in student_routes:
         # Check if attendance record exists
-        existing = db.query(Attendance).filter(
-            Attendance.student_id == sr.student_id,
-            Attendance.route_id == route_id,
-            Attendance.date == today
-        ).first()
+        result = await db.execute(
+            select(Attendance).where(
+                Attendance.student_id == sr.student_id,
+                Attendance.route_id == route_id,
+                Attendance.date == today
+            )
+        )
+        existing = result.scalar_one_or_none()
         
         if not existing:
             # Mark as NO_SHOW
@@ -317,7 +349,7 @@ async def mark_missed_pickups(
             db.add(no_show)
             marked_count += 1
     
-    db.commit()
+    await db.commit()
     return {
         "message": f"Marked {marked_count} students as NO_SHOW on route {route_id}",
         "marked_count": marked_count
@@ -328,8 +360,8 @@ async def mark_missed_pickups(
 @router.post("/absence", response_model=AbsenceResponse)
 async def report_absence(
     request: AbsenceRequest,
-    current_user = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user = Depends(login_required),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Report absence for a student
