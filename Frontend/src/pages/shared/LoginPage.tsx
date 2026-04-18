@@ -71,7 +71,8 @@ export function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="name@example.com" />
+              placeholder="name@example.com" 
+              className="h-10"/>
 
 
             <Input
@@ -80,7 +81,8 @@ export function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              placeholder="••••••••" />
+              placeholder="••••••••" 
+              className="h-10"/>
 
 
             <div className="flex items-center justify-between">
