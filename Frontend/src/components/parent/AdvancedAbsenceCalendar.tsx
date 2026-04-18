@@ -1,6 +1,6 @@
 //@ts-nocheck
 
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
@@ -8,27 +8,37 @@ import { Select } from '../ui/Select';
 import { Textarea } from '../ui/Textarea';
 import { MOCK_STUDENTS, MOCK_SCHEDULED_ABSENCES } from '../../utils/mockData';
 import { Calendar, Check, AlertCircle } from 'lucide-react';
+import { useAttendance } from '../../hooks/useAttendance';
+
 export function AdvancedAbsenceCalendar() {
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [selectedStudent, setSelectedStudent] = useState('s1');
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const { reportAbsence, loading } = useAttendance();
   const handleDateToggle = (date: string) => {
     setSelectedDates((prev) =>
     prev.includes(date) ? prev.filter((d) => d !== date) : [...prev, date]
     );
   };
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setSuccess(true);
-      setSelectedDates([]);
-      setReason('');
-      setTimeout(() => setSuccess(false), 3000);
-    }, 1000);
+    // For each selected date, call API
+    for (const date of selectedDates) {
+      await reportAbsence({
+        student_id: parseInt(selectedStudent),
+        date: date,
+        reason: reason
+      });
+    }
+    // Show success
+    setIsSubmitting(false);
+    setSuccess(true);
+    setSelectedDates([]);
+    setReason('');
+    setTimeout(() => setSuccess(false), 3000);
   };
   // Generate next 14 days
   const generateDates = () => {
