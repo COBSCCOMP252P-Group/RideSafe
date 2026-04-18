@@ -402,33 +402,36 @@ async def report_absence(
 @router.get("/absences/{student_id}")
 async def get_student_absences(
     student_id: int,
-    current_user = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user = Depends(login_required),
+    db: AsyncSession = Depends(get_db)
 ):
    
     # Verify student exists
-    student = db.query(Student).filter(Student.student_id == student_id).first()
+    student = await db.execute(select(Student).where(Student.student_id == student_id))
+    student = student.scalar_one_or_none()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
     # Get all absences for this student
-    absences = db.query(Absence).filter(
-        Absence.student_id == student_id
-    ).order_by(Absence.date.desc()).all()
+    absences = await db.execute(
+        select(Absence).where(Absence.student_id == student_id).order_by(Absence.date.desc())
+    )
+    absences = absences.scalars().all()
 
     return absences
 
 # Get pending absences endpoint
 @router.get("/absences/pending")
 async def get_pending_absences(
-    current_user = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user = Depends(login_required),
+    db: AsyncSession = Depends(get_db)
 ):
    
     # Note: Add admin role check here
-    absences = db.query(Absence).filter(
-        Absence.status == AbsenceStatus.PENDING
-    ).order_by(Absence.reported_at.desc()).all()
+    absences = await db.execute(
+        select(Absence).where(Absence.status == AbsenceStatus.PENDING).order_by(Absence.reported_at.desc())
+    )
+    absences = absences.scalars().all()
 
     return absences
 
@@ -436,12 +439,13 @@ async def get_pending_absences(
 @router.put("/absences/{absence_id}/approve")
 async def approve_absence(
     absence_id: int,
-    current_user = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user = Depends(login_required),
+    db: AsyncSession = Depends(get_db)
 ):
    
     # Find the absence
-    absence = db.query(Absence).filter(Absence.absence_id == absence_id).first()
+    absence = await db.execute(select(Absence).where(Absence.absence_id == absence_id))
+    absence = absence.scalar_one_or_none()
     if not absence:
         raise HTTPException(status_code=404, detail="Absence not found")
 
@@ -470,12 +474,13 @@ async def approve_absence(
 @router.put("/absences/{absence_id}/reject")
 async def reject_absence(
     absence_id: int,
-    current_user = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user = Depends(login_required),
+    db: AsyncSession = Depends(get_db)
 ):
     
     # Find the absence
-    absence = db.query(Absence).filter(Absence.absence_id == absence_id).first()
+    absence = await db.execute(select(Absence).where(Absence.absence_id == absence_id))
+    absence = absence.scalar_one_or_none()
     if not absence:
         raise HTTPException(status_code=404, detail="Absence not found")
 
