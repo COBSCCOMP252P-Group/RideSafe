@@ -32,7 +32,6 @@ export function RegisterReq() {
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-
           <Input
             label="Full Name"
             type="text"
@@ -83,7 +82,7 @@ export function RegisterReq() {
           <Input
             label="Student Grade"
             type="text"
-            placeholder="Enter your child's name"
+            placeholder="Enter your child's grade"
             className="h-10"
             required
           />

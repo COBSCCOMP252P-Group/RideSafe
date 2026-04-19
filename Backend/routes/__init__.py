@@ -5,6 +5,7 @@ from .register_request import router as register_request_router
 from .student import router as student_router
 from .parent import router as parent_router
 from .driver import router as driver_router
+from .attendance import router as attendance_router
 
 
 routers = [
@@ -14,5 +15,6 @@ routers = [
     register_request_router,
     student_router,
     parent_router,
-    driver_router
+    driver_router,
+    attendance_router
 ]

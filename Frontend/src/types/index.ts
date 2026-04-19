@@ -49,6 +49,35 @@ export interface AttendanceRecord {
   checkOut?: string;
 }
 
+export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'NO_SHOW';
+
+export interface AttendanceHistoryResponse {
+  attendance_id: number;
+  date: string;
+  status: AttendanceStatus;
+  check_in_time?: string;
+  check_out_time?: string;
+  is_late: boolean;
+}
+
+export interface AttendanceSummary {
+  total_days: number;
+  present_days: number;
+  absent_days: number;
+  no_show_days: number;
+  late_days: number;
+  attendance_percentage: number;
+}
+
+export interface AbsenceRecord {
+  absence_id: number;
+  student_id: number;
+  date: string;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  reported_at: string;
+}
+
 export interface Notification {
   id: string;
   userId: string;
