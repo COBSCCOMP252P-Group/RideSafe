@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, DECIMAL, Date, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 import enum
-from models.user import Base
+from models.base import Base
 
 class PaymentStatus(str, enum.Enum):
     PENDING = "pending"
@@ -19,8 +19,4 @@ class Payment(Base):
     payment_method = Column(String(50))
     status = Column(Enum(PaymentStatus))
     payment_date = Column(Date)
-    
-    # Relationships
-    parent = relationship("Parent", back_populates="payments")
-    plan = relationship("PaymentPlan", back_populates="payments")
     

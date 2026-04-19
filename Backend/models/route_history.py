@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Date, Time, DECIMAL, ForeignKey
 from sqlalchemy.orm import relationship
-from models.user import Base
+from models.base import Base
 
 class RouteHistory(Base):
     __tablename__ = "route_history"
@@ -11,6 +11,3 @@ class RouteHistory(Base):
     start_time = Column(Time)
     end_time = Column(Time)
     distance = Column(DECIMAL(6, 2))
-    
-    # Relationship
-    route = relationship("Route", back_populates="history")

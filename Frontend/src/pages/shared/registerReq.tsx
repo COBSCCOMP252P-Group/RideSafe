@@ -1,13 +1,67 @@
-import React from "react";
+import React, {useState} from "react";
 import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { UserCircle } from "lucide-react";
 
 export function RegisterReq() {
 
-  const handleSubmit = (e: React.FormEvent) => {
+    const [form, setForm] = useState({
+    parent_name: "",
+    email: "",
+    phone_number: "",
+    address: "",
+    student_index: "",
+    student_name: "",
+    student_grade: ""
+  });
+
+  const [loading, setLoading] = useState(false);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value
+    });
+  };
+
+    const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert("Parent registration request submitted!");
+    setLoading(true);
+
+    try {
+      const response = await fetch("http://localhost:8000/register-requests/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Failed to submit request");
+      }
+
+      alert("Registration request submitted successfully!");
+
+      // reset form
+      setForm({
+        parent_name: "",
+        email: "",
+        phone_number: "",
+        address: "",
+        student_index: "",
+        student_name: "",
+        student_grade: ""
+      });
+
+    } catch (error) {
+      console.error(error);
+      alert((error as Error).message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -33,6 +87,9 @@ export function RegisterReq() {
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-y-5 gap-x-7">
 
           <Input
+            name="parent_name"
+            value={form.parent_name}
+            onChange={handleChange}
             label="Full Name"
             type="text"
             placeholder="Enter your full name"
@@ -41,6 +98,9 @@ export function RegisterReq() {
           />
 
           <Input
+            name="email"
+            value={form.email}
+            onChange={handleChange}
             label="Email Address"
             type="email"
             placeholder="name@email.com"
@@ -49,6 +109,9 @@ export function RegisterReq() {
           />
 
           <Input
+            name="phone_number"
+            value={form.phone_number}
+            onChange={handleChange}
             label="Phone Number"
             type="tel"
             placeholder="07XXXXXXXX"
@@ -57,6 +120,9 @@ export function RegisterReq() {
           />
 
           <Input
+            name="address"
+            value={form.address}
+            onChange={handleChange}
             label="Home Address"
             type="text"
             placeholder="Enter your address"
@@ -65,6 +131,9 @@ export function RegisterReq() {
           />
 
           <Input
+            name="student_index"
+            value={form.student_index}
+            onChange={handleChange}
             label="Student Index"
             type="text"
             placeholder="Enter your Student Index"
@@ -72,6 +141,9 @@ export function RegisterReq() {
           />
 
           <Input
+            name="student_name"
+            value={form.student_name}
+            onChange={handleChange}
             label="Student Name"
             type="text"
             placeholder="Enter your child's name"
@@ -80,6 +152,9 @@ export function RegisterReq() {
           />
 
           <Input
+            name="student_grade"
+            value={form.student_grade}
+            onChange={handleChange}
             label="Student Grade"
             type="text"
             placeholder="Enter your child's grade"
@@ -88,8 +163,8 @@ export function RegisterReq() {
           />
 
           <div className="md:col-span-2">
-            <Button type="submit" className="w-full" size="md">
-              Submit Registration Request
+            <Button type="submit" className="w-full" size="md" disabled={loading}>
+              {loading ? "Submitting..." : "Submit Registration Request"}
             </Button>
           </div>
 

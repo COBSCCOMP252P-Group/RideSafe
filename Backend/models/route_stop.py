@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DECIMAL, Time
 from sqlalchemy.orm import relationship
-from models.user import Base
+from models.base import Base
 
 class RouteStop(Base):
     __tablename__ = "route_stops"
@@ -12,8 +12,3 @@ class RouteStop(Base):
     longitude = Column(DECIMAL(9, 6))
     stop_order = Column(Integer)
     expected_time = Column(Time, nullable=True)  # Expected arrival time at this stop
-
-    # Relationships
-    route = relationship("Route", back_populates="stops")
-    pickup_students = relationship("StudentRoute", foreign_keys="[StudentRoute.pickup_stop_id]", back_populates="pickup_stop")
-    dropoff_students = relationship("StudentRoute", foreign_keys="[StudentRoute.dropoff_stop_id]", back_populates="dropoff_stop")
