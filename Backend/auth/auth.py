@@ -4,6 +4,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt, ExpiredSignatureError
 from passlib.context import CryptContext
+import hashlib
 
 # ==========================
 # JWT Configuration
@@ -17,18 +18,6 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # OAuth2 scheme (reads token from Authorization header)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
-
-# ==========================
-# Password Hashing
-# ==========================
-def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    try:
-        return pwd_context.verify(plain_password, hashed_password)
-    except Exception:
-        return plain_password == hashed_password  # fallback
 
 # ==========================
 # JWT Token Handling
