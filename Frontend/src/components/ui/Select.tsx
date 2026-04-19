@@ -30,11 +30,13 @@ export function Select({
       <select
         id={selectId}
         className={`
-          block w-full rounded-lg border-gray-300 shadow-sm 
-          focus:border-primary-500 focus:ring-primary-500 sm:text-sm
-          ${error ? 'border-red-300 text-red-900 focus:border-red-500 focus:ring-red-500' : ''}
-          ${className}
-        `}
+        block w-full h-10 px-4 rounded-xl border border-gray-300 shadow-sm
+        text-sm transition-all duration-200 appearance-none outline-none
+        focus:outline-none focus:ring-2 focus:ring-violet-500/10 focus:border-violet-500
+        disabled:bg-gray-50 disabled:text-gray-500
+        ${error ? 'border-red-300 text-red-900 focus:border-red-500 focus:ring-red-500/10' : ''}
+        ${className}
+      `}
         {...props}>
 
         {options.map((option) =>
