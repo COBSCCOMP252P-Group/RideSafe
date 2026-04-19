@@ -1,66 +1,137 @@
-import { useState, useEffect, createContext, useContext } from 'react';
-import { User, UserRole } from '../types';
-import { MOCK_USERS, delay } from '../utils/mockData';
+import { useState, useEffect, createContext, useContext } from "react";
+import { User } from "../types";
 
 interface AuthContextType {
   user: User | null;
+  token: string | null;
   isLoading: boolean;
-  login: (email: string, role: UserRole) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
+  authFetch: (url: string, options?: RequestInit) => Promise<Response>;
 }
 
-// Create context with a default value
+// Create context
 export const AuthContext = createContext<AuthContextType>({
   user: null,
+  token: null,
   isLoading: false,
   login: async () => {},
-  logout: () => {}
+  logout: () => {},
+  authFetch: async () => new Response(),
 });
 
+// Hook
 export function useAuth() {
   return useContext(AuthContext);
 }
 
-// Simple provider for wrapping the app
-// Note: In a real app, this would be in a separate provider file
+// Provider logic
 export const useAuthProvider = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
+  // Load saved auth
   useEffect(() => {
-    // Check local storage on mount
-    const storedUser = localStorage.getItem('school_bus_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    const savedToken = localStorage.getItem("token");
+    const savedUser = localStorage.getItem("user");
+
+    if (savedToken) setToken(savedToken);
+    if (savedUser) setUser(JSON.parse(savedUser));
   }, []);
 
-  const login = async (email: string, role: UserRole) => {
+  // -------------------------
+  // LOGIN
+  // -------------------------
+  const login = async (username: string, password: string) => {
     setIsLoading(true);
-    await delay(800); // Simulate network request
 
-    const foundUser = MOCK_USERS.find(
-      (u) => u.email === email && u.role === role
-    );
+    try {
+      const response = await fetch("http://localhost:8000/login/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username,
+          password,
+        }),
+      });
 
-    if (foundUser) {
-      setUser(foundUser);
-      localStorage.setItem('school_bus_user', JSON.stringify(foundUser));
-    } else {
-      // Fallback for demo purposes if email doesn't match exactly but role does
-      // This ensures the demo is robust
-      const demoUser = MOCK_USERS.find((u) => u.role === role) || MOCK_USERS[0];
-      setUser(demoUser);
-      localStorage.setItem('school_bus_user', JSON.stringify(demoUser));
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.detail || "Login failed");
+      }
+
+      // Save token
+      setToken(data.access_token);
+      localStorage.setItem("token", data.access_token);
+
+      // Backend sends user object
+      const newUser: User = {
+        id: data.user.id,
+        role: data.user.role,
+        name: data.user.username,
+        email: data.user.username,
+      };
+
+      setUser(newUser);
+      localStorage.setItem("user", JSON.stringify(newUser));
+
+      // Redirect
+      if (data.redirect_url) {
+        window.location.href = data.redirect_url;
+      }
+    } catch (error) {
+      console.error(error);
+      alert((error as Error).message);
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
+  // -------------------------
+  // LOGOUT
+  // -------------------------
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('school_bus_user');
+    setToken(null);
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
+    window.location.href = "/";
   };
 
-  return { user, isLoading, login, logout };
+  // -------------------------
+  // AUTH FETCH
+  // -------------------------
+  const authFetch = async (
+    url: string,
+    options: RequestInit = {}
+  ): Promise<Response> => {
+    const authToken = token || localStorage.getItem("token");
+
+    if (!authToken) {
+      throw new Error("Not authenticated");
+    }
+
+    return fetch(url, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authToken}`,
+        ...(options.headers || {}),
+      },
+    });
+  };
+
+  return {
+    user,
+    token,
+    isLoading,
+    login,
+    logout,
+    authFetch,
+  };
 };

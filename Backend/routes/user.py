@@ -1,12 +1,12 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import Optional, List
 
-from database import get_db
+from database import async_session
 from models import User
-from auth import hash_password
+from auth.dependencies import role_required
 
 router = APIRouter(
     prefix="/user",
@@ -20,7 +20,7 @@ router = APIRouter(
 class UserCreate(BaseModel):
     username: str
     full_name: str
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
     phone: Optional[str] = None
     password: str
     role: str
@@ -28,7 +28,7 @@ class UserCreate(BaseModel):
 
 class UserUpdate(BaseModel):
     full_name: Optional[str] = None
-    email: Optional[EmailStr] = None
+    email: Optional[str] = None
     phone: Optional[str] = None
     role: Optional[str] = None
     status: Optional[str] = None
@@ -52,34 +52,32 @@ class UserResponse(BaseModel):
 # ==========================
 
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def create_user(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
-
-    result = await db.execute(
-        select(User).where(User.username == user_data.username)
-    )
-    existing_user = result.scalar_one_or_none()
-
-    if existing_user:
-        raise HTTPException(
-            status_code=400,
-            detail="Username already exists"
+async def create_user(user: UserCreate, token: dict = Depends(role_required(["admin"]))):
+    async with async_session() as session:
+        result = await session.execute(select(User).where(User.username == user.username))
+        existing_user = result.scalar_one_or_none()
+        
+        if existing_user:
+            raise HTTPException(
+                status_code=400,
+                details="Username already exists"
+            )
+        
+        new_user = User(
+            username=user.username,
+            full_name=user.full_name,
+            email=user.email,
+            phone=user.phone,
+            password_hash=user.password,
+            role=user.role,
+            status="active"
         )
+        
+        session.add(new_user)
+        await session.commit()
+        await session.refresh(new_user)
 
-    new_user = User(
-        username=user_data.username,
-        full_name=user_data.full_name,
-        email=user_data.email,
-        phone=user_data.phone,
-        password_hash=hash_password(user_data.password),
-        role=user_data.role,
-        status="active"
-    )
-
-    db.add(new_user)
-    await db.commit()
-    await db.refresh(new_user)
-
-    return new_user
+        return new_user
 
 
 # ==========================
@@ -87,10 +85,11 @@ async def create_user(user_data: UserCreate, db: AsyncSession = Depends(get_db))
 # ==========================
 
 @router.get("/", response_model=List[UserResponse])
-async def get_users(db: AsyncSession = Depends(get_db)):
+async def get_users(token: dict = Depends(role_required(["admin"]))):
 
-    result = await db.execute(select(User))
-    users = result.scalars().all()
+    async with async_session() as session:
+        result = await session.execute(select(User))
+        users = result.scalars().all()
 
     return users
 
@@ -100,21 +99,21 @@ async def get_users(db: AsyncSession = Depends(get_db)):
 # ==========================
 
 @router.get("/{user_id}", response_model=UserResponse)
-async def get_user(user_id: int, db: AsyncSession = Depends(get_db)):
+async def get_user(user_id: int, token: dict = Depends(role_required(["admin"]))):
 
-    result = await db.execute(
-        select(User).where(User.user_id == user_id)
-    )
-
-    user = result.scalar_one_or_none()
-
-    if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found"
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.user_id == user_id)
         )
+        user = result.scalar_one_or_none()
 
-    return user
+        if not user:
+            raise HTTPException(
+                status_code=404,
+                detail="User not found"
+            )
+
+        return user
 
 
 # ==========================
@@ -125,12 +124,13 @@ async def get_user(user_id: int, db: AsyncSession = Depends(get_db)):
 async def update_user(
     user_id: int,
     user_data: UserUpdate,
-    db: AsyncSession = Depends(get_db)
+    token: dict = Depends(role_required(["admin"]))
 ):
 
-    result = await db.execute(
-        select(User).where(User.user_id == user_id)
-    )
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.user_id == user_id)
+        )
 
     user = result.scalar_one_or_none()
 
@@ -140,8 +140,8 @@ async def update_user(
     for key, value in user_data.model_dump(exclude_unset=True).items():
         setattr(user, key, value)
 
-    await db.commit()
-    await db.refresh(user)
+    await session.commit()
+    await session.refresh(user)
 
     return user
 
@@ -151,18 +151,19 @@ async def update_user(
 # ==========================
 
 @router.delete("/{user_id}")
-async def delete_user(user_id: int, db: AsyncSession = Depends(get_db)):
+async def delete_user(user_id: int, token: dict = Depends(role_required(["admin"]))):
 
-    result = await db.execute(
-        select(User).where(User.user_id == user_id)
-    )
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.user_id == user_id)
+        )
 
-    user = result.scalar_one_or_none()
+        user = result.scalar_one_or_none()
 
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
 
-    await db.delete(user)
-    await db.commit()
+        await session.delete(user)
+        await session.commit()
 
-    return {"message": "User deleted successfully"}
+        return {"message": "User deleted successfully"}
