@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Date, Enum
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 import enum
-from models.user import Base
+from models.base import Base
 
 class AttendanceStatus(str, enum.Enum):
     PRESENT = "PRESENT"
@@ -30,9 +30,4 @@ class Attendance(Base):
 
     # Metadata
     created_at = Column(DateTime, default=func.now())
-
-    # Relationships
-    student = relationship("Student", back_populates="attendance_records")
-    bus = relationship("Bus", back_populates="attendance_records")
-    route = relationship("Route", back_populates="attendance_records")
   

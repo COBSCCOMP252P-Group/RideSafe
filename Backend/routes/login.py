@@ -88,13 +88,13 @@ async def login_user(login_data: LoginRequest):
         redirect_url = None
 
         if role == "admin":
-            redirect_url = "http://localhost:3000/admin/dashboard"
+            redirect_url = "http://localhost:5173/admin"
 
         elif role == "parent":
-            redirect_url = "http://localhost:3000/parent/dashboard"
+            redirect_url = "http://localhost:5173/parent"
 
         elif role == "driver":
-            redirect_url = "http://localhost:3000/driver/dashboard"
+            redirect_url = "http://localhost:5173/driver"
 
         # --------------------------
         # Response
