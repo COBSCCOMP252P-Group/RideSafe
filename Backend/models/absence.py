@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, ForeignKey, Date, DateTime, Text, Enum, 
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 import enum
-from models.user import Base
+from models.base import Base
 
 class AbsenceStatus(str, enum.Enum):
     PENDING = "pending"
@@ -27,9 +27,5 @@ class Absence(Base):
     # Metadata
     reported_at = Column(DateTime, default=func.now())
     is_excused = Column(Boolean, default=False)
-
-    # Relationships
-    student = relationship("Student", back_populates="absences")
-    approved_by_user = relationship("User")
 
   

@@ -1,8 +1,7 @@
 from sqlalchemy import Column, Integer, String, DateTime, Text
 from sqlalchemy.sql import func
 from sqlalchemy.ext.declarative import declarative_base
-
-Base = declarative_base()
+from models.base import Base
 
 class RegisterRequest(Base):
     __tablename__ = "register_requests"

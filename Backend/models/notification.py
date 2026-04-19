@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from models.user import Base
+from models.base import Base
 
 class Notification(Base):
     __tablename__ = "notifications"
@@ -12,6 +12,3 @@ class Notification(Base):
     type = Column(String(50))
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    
-    # Relationship
-    user = relationship("User", back_populates="notifications")
