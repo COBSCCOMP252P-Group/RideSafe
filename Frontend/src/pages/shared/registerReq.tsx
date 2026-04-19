@@ -13,7 +13,7 @@ export function RegisterReq() {
   return (
     <div className="min-h-screen bg-gradient-to-tr from-purple-100 via-purple-300 to-indigo-200 flex items-center justify-center px-4">
 
-      <div className="glass max-w-md w-full p-8 rounded-xl shadow-lg mt-12 mb-8">
+      <div className="glass max-w-xl w-full p-8 rounded-xl shadow-lg mt-12 mb-8">
 
         {/* Icon */}
         <div className="flex justify-center mb-3">
@@ -30,7 +30,7 @@ export function RegisterReq() {
           Submit a request to register your child for RideSafe
         </p>
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-y-5 gap-x-7">
 
           <Input
             label="Full Name"
@@ -67,7 +67,7 @@ export function RegisterReq() {
           <Input
             label="Student Index"
             type="text"
-            placeholder="Enter your Student Index No"
+            placeholder="Enter your Student Index"
             className="h-10"
           />
 
@@ -88,7 +88,7 @@ export function RegisterReq() {
           />
 
           <div className="md:col-span-2">
-            <Button type="submit" className="w-full" size="lg">
+            <Button type="submit" className="w-full" size="md">
               Submit Registration Request
             </Button>
           </div>
