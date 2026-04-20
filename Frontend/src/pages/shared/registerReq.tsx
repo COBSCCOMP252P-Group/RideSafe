@@ -104,7 +104,7 @@ export function RegisterReq() {
             label="Email Address"
             type="email"
             placeholder="name@email.com"
-            className="h-10"
+            className="h-12"
             required
           />
 
@@ -115,7 +115,7 @@ export function RegisterReq() {
             label="Phone Number"
             type="tel"
             placeholder="07XXXXXXXX"
-            className="h-10"
+            className="h-12"
             required
           />
 
@@ -126,7 +126,7 @@ export function RegisterReq() {
             label="Home Address"
             type="text"
             placeholder="Enter your address"
-            className="h-10"
+            className="h-12"
             required
           />
 
@@ -137,7 +137,7 @@ export function RegisterReq() {
             label="Student Index"
             type="text"
             placeholder="Enter your Student Index"
-            className="h-10"
+            className="h-12"
           />
 
           <Input
@@ -147,7 +147,7 @@ export function RegisterReq() {
             label="Student Name"
             type="text"
             placeholder="Enter your child's name"
-            className="h-10"
+            className="h-12"
             required
           />
 
@@ -158,7 +158,7 @@ export function RegisterReq() {
             label="Student Grade"
             type="text"
             placeholder="Enter your child's grade"
-            className="h-10"
+            className="h-12"
             required
           />
 
