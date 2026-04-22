@@ -7,6 +7,8 @@ import { Badge } from '../../components/ui/Badge';
 import { RoutePlanner } from '../../components/admin/RoutePlanner';
 import { LateStudentWarnings } from '../../components/admin/LateStudentWarnings';
 import { UserRegistration } from '../../components/admin/UserRegistration';
+import { PaymentPlansManager } from '../../components/admin/PaymentPlansManager';
+import { PaymentsViewer } from '../../components/admin/PaymentsViewer';
 import { MOCK_ROUTES, MOCK_INCIDENTS } from '../../utils/mockData';
 import {
   LayoutDashboard,
@@ -17,7 +19,8 @@ import {
   Download,
   Plus,
   Bus,
-  UserPlus } from
+  UserPlus,
+  CreditCard } from
 'lucide-react';
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -47,6 +50,16 @@ export function AdminDashboard() {
     label: 'Late Warnings',
     icon: <AlertTriangle className="h-4 w-4" />,
     badge: 3
+  },
+  {
+    id: 'payment-plans',
+    label: 'Payment Plans',
+    icon: <CreditCard className="h-4 w-4" />
+  },
+  {
+    id: 'payments',
+    label: 'All Payments',
+    icon: <CreditCard className="h-4 w-4" />
   }];
 
   const pageVariants = {
@@ -416,6 +429,36 @@ export function AdminDashboard() {
                   Student CRUD interface coming soon...
                 </p>
               </Card>
+            </motion.div>
+          }
+
+          {activeTab === 'payment-plans' &&
+          <motion.div
+            key="payment-plans"
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{
+              duration: 0.3
+            }}>
+
+              <PaymentPlansManager />
+            </motion.div>
+          }
+
+          {activeTab === 'payments' &&
+          <motion.div
+            key="payments"
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{
+              duration: 0.3
+            }}>
+
+              <PaymentsViewer />
             </motion.div>
           }
         </AnimatePresence>
