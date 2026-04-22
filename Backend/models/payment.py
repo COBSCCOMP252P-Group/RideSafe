@@ -3,11 +3,7 @@ from sqlalchemy.orm import relationship
 import enum
 from models.base import Base
 
-class PaymentStatus(str, enum.Enum):
-    PENDING = "pending"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    REFUNDED = "refunded"
+
 
 class Payment(Base):
     __tablename__ = "payments"
@@ -17,6 +13,5 @@ class Payment(Base):
     plan_id = Column(Integer, ForeignKey("payment_plans.plan_id"))
     amount = Column(DECIMAL(8, 2))
     payment_method = Column(String(50))
-    status = Column(Enum(PaymentStatus))
     payment_date = Column(Date)
     

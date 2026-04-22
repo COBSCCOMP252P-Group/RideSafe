@@ -11,3 +11,5 @@ from .incidents import Incident
 from .sos_alert import SOSAlert
 from .feedback import Feedback
 from .route_history import RouteHistory
+from .payment_plan import PaymentPlan
+from .payment import Payment
