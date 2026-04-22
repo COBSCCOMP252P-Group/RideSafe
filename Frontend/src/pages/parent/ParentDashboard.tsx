@@ -5,8 +5,9 @@ import { BusTracker } from '../../components/parent/BusTracker';
 import { NotificationsList } from '../../components/parent/NotificationsList';
 import { AttendanceHistory } from '../../components/parent/AttendanceHistory';
 import { AdvancedAbsenceCalendar } from '../../components/parent/AdvancedAbsenceCalendar';
+import { PaymentForm } from '../../components/parent/PaymentForm';
 import { MOCK_STUDENTS } from '../../utils/mockData';
-import { MapPin, Calendar, Bell, CalendarX } from 'lucide-react';
+import { MapPin, Calendar, Bell, CalendarX, CreditCard } from 'lucide-react';
 export function ParentDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const child = MOCK_STUDENTS[0];
@@ -30,6 +31,11 @@ export function ParentDashboard() {
     id: 'absences',
     label: 'Plan Absences',
     icon: <CalendarX className="h-4 w-4" />
+  },
+  {
+    id: 'payments',
+    label: 'Payment',
+    icon: <CreditCard className="h-4 w-4" />
   },
   {
     id: 'notifications',
@@ -227,6 +233,21 @@ export function ParentDashboard() {
             }}>
 
               <AdvancedAbsenceCalendar />
+            </motion.div>
+          }
+
+          {activeTab === 'payments' &&
+          <motion.div
+            key="payments"
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{
+              duration: 0.3
+            }}>
+
+              <PaymentForm />
             </motion.div>
           }
 
