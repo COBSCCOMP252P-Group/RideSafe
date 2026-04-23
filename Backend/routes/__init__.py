@@ -20,5 +20,6 @@ routers = [
     driver_router,
     attendance_router,
     payment_router,
-    incident_router
+    incident_router,
+    attendance_router
 ]

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { AttendanceHistoryResponse, AttendanceSummary } from '../types';
 
+const API_BASE = 'http://localhost:8000';
 
 export interface CheckInRequest {
   student_id: number;
@@ -30,7 +31,7 @@ export function useAttendance() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/v1/attendance/checkin', {
+      const response = await fetch(`${API_BASE}/api/v1/attendance/checkin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -56,7 +57,7 @@ export function useAttendance() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/v1/attendance/checkout', {
+      const response = await fetch(`${API_BASE}/api/v1/attendance/checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -110,7 +111,7 @@ export function useAttendance() {
 
   try {
     const response = await fetch(
-      `/api/v1/attendance/history/${studentId}?days=${days}`,
+      `${API_BASE}/api/v1/attendance/history/${studentId}?days=${days}`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -160,7 +161,7 @@ export function useAttendance() {
     setError(null);
     try {
       const response = await fetch(
-        `/api/v1/attendance/summary/${studentId}?start_date=${startDate}&end_date=${endDate}`,
+        `${API_BASE}/api/v1/attendance/summary/${studentId}?start_date=${startDate}&end_date=${endDate}`,
         {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -185,7 +186,7 @@ export function useAttendance() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/v1/attendance/absence', {
+      const response = await fetch(`${API_BASE}/api/v1/attendance/absence`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -247,7 +248,7 @@ export function useStudents() {
         'Authorization': `Bearer ${token}`
       };
 
-      const response = await fetch('/api/v1/students', {
+      const response = await fetch(`${API_BASE}/api/v1/students`, {
         headers
       });
 
