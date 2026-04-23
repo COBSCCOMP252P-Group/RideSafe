@@ -9,7 +9,9 @@ import { LateStudentWarnings } from '../../components/admin/LateStudentWarnings'
 import { UserRegistration } from '../../components/admin/UserRegistration';
 import { PaymentPlansManager } from '../../components/admin/PaymentPlansManager';
 import { PaymentsViewer } from '../../components/admin/PaymentsViewer';
-import { MOCK_ROUTES, MOCK_INCIDENTS } from '../../utils/mockData';
+import { IncidentsViewer, RecentIncidents } from '../../components/admin/IncidentsViewer';
+import { SOSAlertsManager } from '../../components/admin/SOSAlertsManager';
+import { MOCK_ROUTES } from '../../utils/mockData';
 import {
   LayoutDashboard,
   Users,
@@ -20,8 +22,9 @@ import {
   Plus,
   Bus,
   UserPlus,
-  CreditCard } from
-'lucide-react';
+  CreditCard,
+  ShieldAlert,
+  Siren } from 'lucide-react';
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const tabs = [
@@ -60,6 +63,16 @@ export function AdminDashboard() {
     id: 'payments',
     label: 'All Payments',
     icon: <CreditCard className="h-4 w-4" />
+  },
+  {
+    id: 'incidents',
+    label: 'Incidents',
+    icon: <ShieldAlert className="h-4 w-4" />
+  },
+  {
+    id: 'sos',
+    label: 'SOS Alerts',
+    icon: <Siren className="h-4 w-4" />
   }];
 
   const pageVariants = {
@@ -323,45 +336,7 @@ export function AdminDashboard() {
                 }}>
 
                   <Card title="Recent Incidents" className="h-full">
-                    <div className="space-y-4">
-                      {MOCK_INCIDENTS.map((incident, index) =>
-                    <motion.div
-                      key={incident.id}
-                      initial={{
-                        opacity: 0,
-                        y: 20
-                      }}
-                      animate={{
-                        opacity: 1,
-                        y: 0
-                      }}
-                      transition={{
-                        delay: 0.7 + index * 0.1
-                      }}
-                      className="flex items-start p-4 bg-gradient-to-r from-red-50 to-rose-50 rounded-xl border border-red-100 hover:shadow-md transition-shadow duration-200">
-
-                          <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" />
-                          <div className="flex-1">
-                            <h4 className="text-sm font-bold text-gray-900 capitalize">
-                              {incident.type} Issue
-                            </h4>
-                            <p className="text-sm text-gray-600 mt-1">
-                              {incident.description}
-                            </p>
-                            <div className="flex items-center mt-2 space-x-2">
-                              <Badge variant="danger" className="text-xs">
-                                High Severity
-                              </Badge>
-                              <span className="text-xs text-gray-400">
-                                {new Date(
-                              incident.timestamp
-                            ).toLocaleTimeString()}
-                              </span>
-                            </div>
-                          </div>
-                        </motion.div>
-                    )}
-                    </div>
+                    <RecentIncidents />
                   </Card>
                 </motion.div>
               </div>
@@ -459,6 +434,36 @@ export function AdminDashboard() {
             }}>
 
               <PaymentsViewer />
+            </motion.div>
+          }
+
+          {activeTab === 'incidents' &&
+          <motion.div
+            key="incidents"
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{
+              duration: 0.3
+            }}>
+
+              <IncidentsViewer />
+            </motion.div>
+          }
+
+          {activeTab === 'sos' &&
+          <motion.div
+            key="sos"
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{
+              duration: 0.3
+            }}>
+
+              <SOSAlertsManager />
             </motion.div>
           }
         </AnimatePresence>
