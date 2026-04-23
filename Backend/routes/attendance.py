@@ -45,9 +45,9 @@ class AttendanceHistoryResponse(BaseModel):
     attendance_id: int
     date: date
     status: AttendanceStatus
-    check_in_time: Optional[datetime]
-    check_out_time: Optional[datetime]
-    is_late: bool
+    check_in_time: Optional[time] | None
+    check_out_time: Optional[time] |None
+    is_late: bool |None
 
     class Config:
         from_attributes = True
@@ -249,7 +249,7 @@ async def check_out(
 async def get_attendance_history(
     student_id: int,
     days: int = Query(30, ge=1, le=365),
-    current_user = Depends(login_required),
+    # current_user = Depends(login_required),
     db: AsyncSession = Depends(get_db)
 ):
    
@@ -369,16 +369,22 @@ async def report_absence(
     - Sets status to PENDING (awaiting admin approval)
     - Reason is required
     """
-    # Verify student exists
-    student = db.query(Student).filter(Student.student_id == request.student_id).first()
+    # Verify student exists - FIXED: Use select() instead of query()
+    result = await db.execute(
+        select(Student).where(Student.student_id == request.student_id)
+    )
+    student = result.scalar_one_or_none()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
-    # Check for duplicate report
-    existing = db.query(Absence).filter(
-        Absence.student_id == request.student_id,
-        Absence.date == request.date
-    ).first()
+    # Check for duplicate report - FIXED: Use select() instead of query()
+    result = await db.execute(
+        select(Absence).where(
+            Absence.student_id == request.student_id,
+            Absence.date == request.date
+        )
+    )
+    existing = result.scalar_one_or_none()
 
     if existing:
         raise HTTPException(status_code=400, detail="Absence already reported for this date")
@@ -392,8 +398,8 @@ async def report_absence(
     )
 
     db.add(absence)
-    db.commit()
-    db.refresh(absence)
+    await db.commit()  # FIXED: Add await
+    await db.refresh(absence)  # FIXED: Add await
 
     return absence
 

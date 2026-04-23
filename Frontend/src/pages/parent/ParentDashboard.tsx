@@ -6,11 +6,12 @@ import { NotificationsList } from '../../components/parent/NotificationsList';
 import { AttendanceHistory } from '../../components/parent/AttendanceHistory';
 import { AdvancedAbsenceCalendar } from '../../components/parent/AdvancedAbsenceCalendar';
 import { PaymentForm } from '../../components/parent/PaymentForm';
-import { MOCK_STUDENTS } from '../../utils/mockData';
+import { useStudents } from '../../hooks/useAttendance';
 import { MapPin, Calendar, Bell, CalendarX, CreditCard } from 'lucide-react';
 export function ParentDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
-  const child = MOCK_STUDENTS[0];
+  const { students, loading: studentsLoading, error: studentsError } = useStudents();
+  const child = students && students.length > 0 ? students[0] : null;
   const tabs = [
   {
     id: 'overview',
@@ -77,7 +78,7 @@ export function ParentDashboard() {
             Welcome back, Sarah!
           </h1>
           <p className="text-gray-600 mt-2">
-            Manage {child.name}'s school transport
+            Manage {child ? child.full_name : 'your child'}'s school transport
           </p>
         </motion.div>
 
@@ -121,19 +122,19 @@ export function ParentDashboard() {
                 <div className="flex items-center space-x-4">
                   <div className="relative">
                     <img
-                    src={child.avatar}
-                    alt={child.name}
+                    src={child ? `https://i.pravatar.cc/150?u=student-${child.student_id}` : 'https://i.pravatar.cc/150?u=placeholder'}
+                    alt={child ? child.full_name : 'Student'}
                     className="h-20 w-20 rounded-2xl object-cover border-4 border-primary-100" />
 
                     <div className="absolute -bottom-1 -right-1 h-6 w-6 bg-green-500 rounded-full border-4 border-white"></div>
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-gray-900">
-                      {child.name}
+                      {child ? child.full_name : 'Student name'}
                     </h3>
-                    <p className="text-sm text-gray-500">{child.grade} Grade</p>
+                    <p className="text-sm text-gray-500">{child ? `${child.grade ?? 'N/A'} Grade` : 'Grade unavailable'}</p>
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium mt-2 bg-gradient-to-r from-primary-100 to-primary-200 text-primary-800 border border-primary-300">
-                      Route A • {child.status.replace('_', ' ')}
+                      Route A • {child ? child.status.replace('_', ' ') : 'active'}
                     </span>
                   </div>
                 </div>

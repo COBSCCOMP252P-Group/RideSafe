@@ -6,17 +6,24 @@ import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Select } from '../ui/Select';
 import { Textarea } from '../ui/Textarea';
-import { MOCK_STUDENTS, MOCK_SCHEDULED_ABSENCES } from '../../utils/mockData';
+import { MOCK_SCHEDULED_ABSENCES } from '../../utils/mockData';
 import { Calendar, Check, AlertCircle } from 'lucide-react';
-import { useAttendance } from '../../hooks/useAttendance';
+import { useAttendance, useStudents } from '../../hooks/useAttendance';
 
 export function AdvancedAbsenceCalendar() {
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
-  const [selectedStudent, setSelectedStudent] = useState('s1');
+  const [selectedStudent, setSelectedStudent] = useState('');
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const { reportAbsence, loading } = useAttendance();
+  const { students, loading: studentsLoading, error: studentsError } = useStudents();
+
+  React.useEffect(() => {
+    if (!selectedStudent && students.length > 0) {
+      setSelectedStudent(students[0].student_id.toString());
+    }
+  }, [students, selectedStudent]);
   const handleDateToggle = (date: string) => {
     setSelectedDates((prev) =>
     prev.includes(date) ? prev.filter((d) => d !== date) : [...prev, date]
@@ -92,12 +99,12 @@ export function AdvancedAbsenceCalendar() {
           label="Select Child"
           value={selectedStudent}
           onChange={(e) => setSelectedStudent(e.target.value)}
-          options={MOCK_STUDENTS.filter((s) => s.parentId === 'u1').map(
-            (s) => ({
-              value: s.id,
-              label: s.name
-            })
-          )} />
+          options={students.map((student) => ({
+            value: student.student_id.toString(),
+            label: `${student.full_name} (${student.grade || 'No grade'})`
+          }))}
+          disabled={studentsLoading}
+          required />
 
 
           <div>

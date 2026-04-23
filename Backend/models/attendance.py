@@ -19,8 +19,8 @@ class Attendance(Base):
     date = Column(Date, nullable=False, default=func.current_date())
 
     # Check-in/out times
-    check_in_time = Column(DateTime, nullable=True)  # When student boards
-    check_out_time = Column(DateTime, nullable=True)  # When student exits
+    check_in_time = Column(Time, nullable=True)  # When student boards
+    check_out_time = Column(Time, nullable=True)  # When student exits
 
     # Status tracking
     status = Column(Enum(AttendanceStatus), default=AttendanceStatus.ABSENT)
