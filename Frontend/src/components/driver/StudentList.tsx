@@ -6,18 +6,20 @@ import { Badge } from '../ui/Badge';
 import { Check, LogOut, Phone } from 'lucide-react';
 import { useAttendance } from '../../hooks/useAttendance';
 
+const API_BASE = 'http://localhost:8000';
+
 export function StudentList() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { checkIn, checkOut } = useAttendance();
+  const { checkIn, checkOut, getAttendanceHistory } = useAttendance();
 
   // Fetch students from backend on component mount
   useEffect(() => {
     const fetchStudents = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/v1/students', {
+        const response = await fetch(`${API_BASE}/api/v1/students`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
@@ -33,10 +35,15 @@ export function StudentList() {
           id: student.student_id,
           name: student.full_name,
           grade: student.grade,
-          status: 'on_bus', // Set default, will update on check-in/out
-          avatar: `https://i.pravatar.cc/150?u=s${student.student_id}`
+          status: 'not_checked_in', // Default status
+          avatar: `https://i.pravatar.cc/150?u=s${student.student_id}`,
+          hasCheckedIn: false,
+          hasCheckedOut: false
         }));
         setStudents(mappedStudents);
+        
+        // Fetch today's attendance for all students
+        await fetchTodayAttendance(mappedStudents);
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load students');
@@ -49,20 +56,36 @@ export function StudentList() {
     fetchStudents();
   }, []);
 
-  const handleStatusChange = (
-    id: string,
-    newStatus: 'on_bus' | 'at_school' | 'at_home') =>
-  {
-    setStudents((prev) =>
-      prev.map((s) =>
-        s.id === id ?
-        {
-          ...s,
-          status: newStatus
-        } :
-        s
-      )
-    );
+  // Fetch today's attendance status for all students
+  const fetchTodayAttendance = async (studentList) => {
+    try {
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+      
+      for (const student of studentList) {
+        try {
+          const history = await getAttendanceHistory(student.id, 1); // Last 1 day
+          const todayRecord = history.find(record => 
+            record.date === today
+          );
+          
+          if (todayRecord) {
+            setStudents(prev => prev.map(s => 
+              s.id === student.id ? {
+                ...s,
+                hasCheckedIn: !!todayRecord.check_in_time,
+                hasCheckedOut: !!todayRecord.check_out_time,
+                status: todayRecord.check_out_time ? 'at_school' : 
+                       todayRecord.check_in_time ? 'on_bus' : 'not_checked_in'
+              } : s
+            ));
+          }
+        } catch (err) {
+          console.log(`No attendance record for student ${student.id} today`);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching attendance:', err);
+    }
   };
 
   const handleBoard = async (studentId) => {
@@ -72,9 +95,18 @@ export function StudentList() {
         bus_id: 1,  // Get from current route
         route_id: 1
       });
-      handleStatusChange(studentId, 'on_bus');
+      // Update local state
+      setStudents(prev => prev.map(s => 
+        s.id === studentId ? {
+          ...s,
+          hasCheckedIn: true,
+          hasCheckedOut: false,
+          status: 'on_bus'
+        } : s
+      ));
     } catch (err) {
       console.error('Check-in failed:', err);
+      alert('Check-in failed: ' + (err.message || 'Unknown error'));
     }
   };
 
@@ -84,9 +116,17 @@ export function StudentList() {
         student_id: studentId,
         bus_id: 1
       });
-      handleStatusChange(studentId, 'at_school');
+      // Update local state
+      setStudents(prev => prev.map(s => 
+        s.id === studentId ? {
+          ...s,
+          hasCheckedOut: true,
+          status: 'at_school'
+        } : s
+      ));
     } catch (err) {
       console.error('Check-out failed:', err);
+      alert('Check-out failed: ' + (err.message || 'Unknown error'));
     }
   };
 
@@ -140,34 +180,31 @@ export function StudentList() {
             </div>
 
             <div className="flex space-x-2">
-              {student.status !== 'absent' &&
-            <>
-                  {student.status !== 'on_bus' ?
+              {!student.hasCheckedIn ? (
+                <Button
+                  size="sm"
+                  onClick={() => handleBoard(student.id)}
+                  className="bg-green-600 hover:bg-green-700">
+                  <Check className="h-4 w-4 mr-1" />
+                  Board
+                </Button>
+              ) : !student.hasCheckedOut ? (
+                <Button
+                  size="sm"
+                  onClick={() => handleDrop(student.id)}
+                  className="bg-blue-600 hover:bg-blue-700">
+                  <LogOut className="h-4 w-4 mr-1" />
+                  Drop-off
+                </Button>
+              ) : (
+                <Badge variant="success" className="px-3 py-1">
+                  Completed
+                </Badge>
+              )}
               <Button
                 size="sm"
-                onClick={() => handleBoard(student.id)}
-                className="bg-green-600 hover:bg-green-700">
-
-                      <Check className="h-4 w-4 mr-1" /> Board
-                    </Button> :
-
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() =>
-                handleDrop(student.id)
-                }>
-
-                      <LogOut className="h-4 w-4 mr-1" /> Drop
-                    </Button>
-              }
-                </>
-            }
-              <Button
-              size="sm"
-              variant="ghost"
-              className="text-gray-400 hover:text-primary-600">
-
+                variant="ghost"
+                className="text-gray-400 hover:text-primary-600">
                 <Phone className="h-4 w-4" />
               </Button>
             </div>
