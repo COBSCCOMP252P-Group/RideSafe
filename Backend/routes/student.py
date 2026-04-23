@@ -12,7 +12,6 @@ from auth.dependencies import role_required, login_required
 router = APIRouter(prefix="/api/v1/students", tags=["students"])
 
 class StudentCreate(BaseModel):
-    student_id: int
     full_name: str
     grade: Optional[str] = None
     parent_id: int
@@ -87,13 +86,12 @@ async def create_student(student: StudentCreate, token: dict = Depends(role_requ
             raise HTTPException(status_code=404, detail="Parent not found")
         
         new_student = Student(
-            student_id=student.student_id,
             full_name=student.full_name,
             grade=student.grade,
             parent_id=student.parent_id,
             status=student.status,
             index_no=student.index_no
-        )
+        )  
         session.add(new_student)
         await session.commit()
         await session.refresh(new_student)
