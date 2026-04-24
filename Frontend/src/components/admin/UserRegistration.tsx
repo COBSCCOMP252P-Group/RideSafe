@@ -410,282 +410,279 @@ export function UserRegistration() {
 
       {/* Add/Edit User Modal */}
        {isModalOpen && (
-  <div className="fixed inset-0 z-50 bg-gradient-to-br from-slate-50 via-white to-purple-50 overflow-y-auto">
-    <div className="min-h-screen px-4 py-10 md:px-8">
-      <div className="max-w-5xl mx-auto">
+  <div className="fixed top-20 left-0 right-0 bottom-0 z-40 bg-black/30 backdrop-blur-sm flex items-start justify-center overflow-y-auto px-4 py-6">
+    
+    <div className="w-full max-w-4xl bg-white rounded-[28px] shadow-[0_20px_60px_rgba(109,40,217,0.10)] border border-purple-100 overflow-hidden h-full max-h-full flex flex-col">
+      
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100 shrink-0">
+        <div>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+            {editingUser ? 'Edit User' : 'Create New User'}
+          </h2>
+          <p className="text-gray-500 mt-2">
+            Fill in the details below to {editingUser ? 'update' : 'register'} a user
+          </p>
+        </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setIsModalOpen(false)}
+          className="border-gray-200 bg-white hover:bg-gray-50 shadow-sm"
+        >
+          Cancel
+        </Button>
+      </div>
+
+      {/* Scrollable Body */}
+      <div className="overflow-y-auto flex-1">
         
-        {/* Top bar */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
-              {editingUser ? 'Edit User' : 'Create New User'}
-            </h2>
-            <p className="text-gray-500 mt-2">
-              Fill in the details below to {editingUser ? 'update' : 'register'} a user
-            </p>
+        {/* Header strip */}
+        <div className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-500 px-8 py-8 text-white">
+          <div className="flex items-center gap-4">
+            <div className="h-16 w-16 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md">
+              <UserPlus className="h-8 w-8" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold">
+                User Registration Form
+              </h3>
+              <p className="text-white/80 mt-1">
+                Clean and role-based user creation page
+              </p>
+            </div>
           </div>
-
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setIsModalOpen(false)}
-            className="border-gray-200 bg-white hover:bg-gray-50 shadow-sm"
-          >
-            Cancel
-          </Button>
         </div>
 
-        {/* Main card */}
-        <div className="bg-white rounded-[28px] shadow-[0_20px_60px_rgba(109,40,217,0.10)] border border-purple-100 overflow-hidden">
+        <form onSubmit={handleSubmit} className="p-8 md:p-10 space-y-8">
           
-          {/* Header strip */}
-          <div className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-500 px-8 py-8 text-white">
-            <div className="flex items-center gap-4">
-              <div className="h-16 w-16 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md">
-                <UserPlus className="h-8 w-8" />
-              </div>
-              <div>
-                <h3 className="text-2xl font-bold">
-                  User Registration Form
-                </h3>
-                <p className="text-white/80 mt-1">
-                  Clean and role-based user creation page
-                </p>
-              </div>
+          {/* Basic details */}
+          <div>
+            <h4 className="text-lg font-semibold text-gray-900 mb-5">
+              Basic Information
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+              <Input
+                label="Full Name"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    name: e.target.value
+                  })
+                }
+                required
+                placeholder="Enter full name"
+                className="bg-white border border-gray-200 rounded-xl shadow-sm"
+              />
+
+              <Input
+                label="Email Address"
+                type="email"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    email: e.target.value
+                  })
+                }
+                required
+                placeholder="Enter email address"
+                className="bg-white border border-gray-200 rounded-xl shadow-sm"
+              />
+
+              <Input
+                label="Phone Number"
+                type="tel"
+                value={formData.phone}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    phone: e.target.value
+                  })
+                }
+                placeholder="Enter phone number"
+                className="bg-white border border-gray-200 rounded-xl shadow-sm"
+              />
+
+              <Select
+                label="User Role"
+                value={formData.role}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    role: e.target.value as UserRole
+                  })
+                }
+                options={[
+                  { value: 'parent', label: 'Parent' },
+                  { value: 'driver', label: 'Driver' },
+                  { value: 'admin', label: 'Admin' }
+                ]}
+                className="bg-white border border-gray-200 rounded-xl shadow-sm"
+              />
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-8 md:p-10 space-y-8">
-            
-            {/* Basic details */}
+          {/* Role based fields */}
+          {formData.role === 'parent' && (
             <div>
               <h4 className="text-lg font-semibold text-gray-900 mb-5">
-                Basic Information
+                Student Details
               </h4>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                 <Input
-                  label="Full Name"
-                  value={formData.name}
+                  label="Student Index"
+                  value={formData.studentIndex}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      name: e.target.value
+                      studentIndex: e.target.value
                     })
                   }
-                  required
-                  placeholder="Enter full name"
+                  placeholder="Enter student index"
                   className="bg-white border border-gray-200 rounded-xl shadow-sm"
                 />
 
                 <Input
-                  label="Email Address"
-                  type="email"
-                  value={formData.email}
+                  label="Student Name"
+                  value={formData.studentName}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      email: e.target.value
+                      studentName: e.target.value
                     })
                   }
-                  required
-                  placeholder="Enter email address"
+                  placeholder="Enter student name"
                   className="bg-white border border-gray-200 rounded-xl shadow-sm"
                 />
 
                 <Input
-                  label="Phone Number"
-                  type="tel"
-                  value={formData.phone}
+                  label="Student Grade"
+                  value={formData.studentGrade}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      phone: e.target.value
+                      studentGrade: e.target.value
                     })
                   }
-                  placeholder="Enter phone number"
+                  placeholder="Enter student grade"
                   className="bg-white border border-gray-200 rounded-xl shadow-sm"
                 />
 
-                <Select
-                  label="User Role"
-                  value={formData.role}
+                <Input
+                  label="Address"
+                  value={formData.address}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      role: e.target.value as UserRole
+                      address: e.target.value
                     })
                   }
-                  options={[
-                    { value: 'parent', label: 'Parent' },
-                    { value: 'driver', label: 'Driver' },
-                    { value: 'admin', label: 'Admin' }
-                  ]}
+                  placeholder="Enter address"
                   className="bg-white border border-gray-200 rounded-xl shadow-sm"
                 />
               </div>
             </div>
+          )}
 
-            {/* Role based fields */}
-            {formData.role === 'parent' && (
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-5">
-                  Student Details
-                </h4>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                  <Input
-                    label="Student Index"
-                    value={formData.studentIndex}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        studentIndex: e.target.value
-                      })
-                    }
-                    placeholder="Enter student index"
-                    className="bg-white border border-gray-200 rounded-xl shadow-sm"
-                  />
-
-                  <Input
-                    label="Student Name"
-                    value={formData.studentName}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        studentName: e.target.value
-                      })
-                    }
-                    placeholder="Enter student name"
-                    className="bg-white border border-gray-200 rounded-xl shadow-sm"
-                  />
-
-                  <Input
-                    label="Student Grade"
-                    value={formData.studentGrade}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        studentGrade: e.target.value
-                      })
-                    }
-                    placeholder="Enter student grade"
-                    className="bg-white border border-gray-200 rounded-xl shadow-sm"
-                  />
-
-                  <Input
-                    label="Address"
-                    value={formData.address}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        address: e.target.value
-                      })
-                    }
-                    placeholder="Enter address"
-                    className="bg-white border border-gray-200 rounded-xl shadow-sm"
-                  />
-                </div>
-              </div>
-            )}
-
-            {formData.role === 'driver' && (
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-5">
-                  Driver Details
-                </h4>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                  <Input
-                    label="Vehicle No"
-                    value={formData.vehicleNo}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        vehicleNo: e.target.value
-                      })
-                    }
-                    placeholder="Enter vehicle number"
-                    className="bg-white border border-gray-200 rounded-xl shadow-sm"
-                  />
-
-                  <Input
-                    label="Emergency Contact"
-                    value={formData.emergencyContact}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        emergencyContact: e.target.value
-                      })
-                    }
-                    placeholder="Enter emergency contact"
-                    className="bg-white border border-gray-200 rounded-xl shadow-sm"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Admin gets only default fields, so no extra section */}
-
-            {/* Security */}
+          {formData.role === 'driver' && (
             <div>
               <h4 className="text-lg font-semibold text-gray-900 mb-5">
-                Security
+                Driver Details
               </h4>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                 <Input
-                  label="Password"
-                  type="password"
-                  value={formData.password}
+                  label="Vehicle No"
+                  value={formData.vehicleNo}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      password: e.target.value
+                      vehicleNo: e.target.value
                     })
                   }
-                  required
-                  placeholder="Enter password"
+                  placeholder="Enter vehicle number"
                   className="bg-white border border-gray-200 rounded-xl shadow-sm"
                 />
 
                 <Input
-                  label="Confirm Password"
-                  type="password"
-                  value={formData.password}
+                  label="Emergency Contact"
+                  value={formData.emergencyContact}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      password: e.target.value
+                      emergencyContact: e.target.value
                     })
                   }
-                  required
-                  placeholder="Confirm password"
-                  className="bg-white border border-gray-200 rounded-xxl shadow-sm"
+                  placeholder="Enter emergency contact"
+                  className="bg-white border border-gray-200 rounded-xl shadow-sm"
                 />
               </div>
             </div>
+          )}
 
-            {/* Buttons */}
-            <div className="flex justify-end gap-4 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsModalOpen(false)}
-                className="bg-white border-gray-200 hover:bg-gray-50 px-6"
-              >
-                Cancel
-              </Button>
+          {/* Security */}
+          <div>
+            <h4 className="text-lg font-semibold text-gray-900 mb-5">
+              Security
+            </h4>
 
-              <Button
-                type="submit"
-                className="px-8 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 shadow-lg"
-              >
-                {editingUser ? 'Update User' : 'Create User'}
-              </Button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+              <Input
+                label="Password"
+                type="password"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    password: e.target.value
+                  })
+                }
+                required
+                placeholder="Enter password"
+                className="bg-white border border-gray-200 rounded-xl shadow-sm"
+              />
+
+              <Input
+                label="Confirm Password"
+                type="password"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    password: e.target.value
+                  })
+                }
+                required
+                placeholder="Confirm password"
+                className="bg-white border border-gray-200 rounded-xl shadow-sm"
+              />
             </div>
-          </form>
-        </div>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex justify-end gap-4 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsModalOpen(false)}
+              className="bg-white border-gray-200 hover:bg-gray-50 px-6"
+            >
+              Cancel
+            </Button>
+
+            <Button
+              type="submit"
+              className="px-8 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 shadow-lg"
+            >
+              {editingUser ? 'Update User' : 'Create User'}
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

@@ -11,3 +11,6 @@ from .incidents import Incident
 from .sos_alert import SOSAlert
 from .feedback import Feedback
 from .route_history import RouteHistory
+from .student_fixed_location import StudentFixedLocation
+from .student_temp_location import StudentTempLocation
+from .location import Location
