@@ -406,7 +406,7 @@ export function useStudents() {
         'Authorization': `Bearer ${token}`
       };
 
-      const response = await fetch(`${API_BASE}/api/v1/students`, {
+      const response = await fetch(`${API_BASE}/students`, {
         headers
       });
 
