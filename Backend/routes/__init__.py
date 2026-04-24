@@ -20,7 +20,7 @@ routers = [
     parent_router,
     driver_router,
     attendance_router,
-    student_location_router
+    student_location_router,
     payment_router,
     incident_router,
     attendance_router

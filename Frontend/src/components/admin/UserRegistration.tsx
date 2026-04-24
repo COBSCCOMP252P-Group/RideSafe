@@ -503,15 +503,6 @@ const handleSubmit = async (e: React.FormEvent) => {
             Fill in the details below to {editingUser ? 'update' : 'register'} a user
           </p>
         </div>
-
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => setIsModalOpen(false)}
-          className="border-gray-200 bg-white hover:bg-gray-50 shadow-sm"
-        >
-          Cancel
-        </Button>
       </div>
 
       {/* Scrollable Body */}
@@ -703,44 +694,6 @@ const handleSubmit = async (e: React.FormEvent) => {
               </div>
             </div>
           )}
-
-          {/* Security */}
-          <div>
-            <h4 className="text-lg font-semibold text-gray-900 mb-5">
-              Security
-            </h4>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-              <Input
-                label="Password"
-                type="password"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    password: e.target.value
-                  })
-                }
-                required
-                placeholder="Enter password"
-                className="bg-white border border-gray-200 rounded-xl shadow-sm"
-              />
-
-              <Input
-                label="Confirm Password"
-                type="password"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    password: e.target.value
-                  })
-                }
-                required
-                placeholder="Confirm password"
-                className="bg-white border border-gray-200 rounded-xl shadow-sm"
-              />
-            </div>
 
           {/* Security */}
           <div>

@@ -5,14 +5,16 @@ import { BusTracker } from '../../components/parent/BusTracker';
 import { NotificationsList } from '../../components/parent/NotificationsList';
 import { AttendanceHistory } from '../../components/parent/AttendanceHistory';
 import { AdvancedAbsenceCalendar } from '../../components/parent/AdvancedAbsenceCalendar';
-import { MOCK_STUDENTS } from '../../utils/mockData';
-import { MapPin, Calendar, Bell, CalendarX, Map, Plus } from 'lucide-react';
+import { MapPin, Calendar, Bell, CalendarX, Map, Plus, CreditCard } from 'lucide-react';
 import SetLocationModal from '../../components/layout/SetLocationModal';
+import { PaymentForm } from '../../components/parent/PaymentForm';
+import { useStudents } from '../../hooks/useAttendance';
 
 export function ParentDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
-  const child = MOCK_STUDENTS[0];
+  const { students, loading: studentsLoading, error: studentsError } = useStudents();
+  const child = students && students.length > 0 ? students[0] : null;
   
   const tabs = [
     {
@@ -42,47 +44,7 @@ export function ParentDashboard() {
       badge: 3
     }
   ];
-import { PaymentForm } from '../../components/parent/PaymentForm';
-import { useStudents } from '../../hooks/useAttendance';
-import { MapPin, Calendar, Bell, CalendarX, CreditCard } from 'lucide-react';
-export function ParentDashboard() {
-  const [activeTab, setActiveTab] = useState('overview');
-  const { students, loading: studentsLoading, error: studentsError } = useStudents();
-  const child = students && students.length > 0 ? students[0] : null;
-  const tabs = [
-  {
-    id: 'overview',
-    label: 'Overview',
-    icon: <MapPin className="h-4 w-4" />
-  },
-  {
-    id: 'track',
-    label: 'Track Bus',
-    icon: <MapPin className="h-4 w-4" />
-  },
-  {
-    id: 'attendance',
-    label: 'Attendance',
-    icon: <Calendar className="h-4 w-4" />
-  },
-  {
-    id: 'absences',
-    label: 'Plan Absences',
-    icon: <CalendarX className="h-4 w-4" />
-  },
-  {
-    id: 'payments',
-    label: 'Payment',
-    icon: <CreditCard className="h-4 w-4" />
-  },
-  {
-    id: 'notifications',
-    label: 'Notifications',
-    icon: <Bell className="h-4 w-4" />,
-    badge: 3
-  }];
-
-  const pageVariants = {
+const pageVariants = {
     initial: {
       opacity: 0,
       y: 20
@@ -117,7 +79,7 @@ export function ParentDashboard() {
               Welcome back, Sarah!
             </h1>
             <p className="text-gray-600 mt-2">
-              Manage {child.name}'s school transport
+              Manage {child ? child.full_name : 'your child'}'s school transport
             </p>
           </div>
 
@@ -144,12 +106,6 @@ export function ParentDashboard() {
             {/* Shine effect */}
             <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
           </motion.button>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-primary-800 bg-clip-text text-transparent">
-            Welcome back, Sarah!
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Manage {child ? child.full_name : 'your child'}'s school transport
-          </p>
         </motion.div>
 
         {/* Tabs */}
