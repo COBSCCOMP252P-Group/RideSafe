@@ -6,6 +6,7 @@ from .student import router as student_router
 from .parent import router as parent_router
 from .driver import router as driver_router
 from .attendance import router as attendance_router
+from .student_location import router as student_location_router
 from .payment import router as payment_router
 from .incident import router as incident_router
 
@@ -19,6 +20,7 @@ routers = [
     parent_router,
     driver_router,
     attendance_router,
+    student_location_router
     payment_router,
     incident_router,
     attendance_router
