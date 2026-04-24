@@ -32,8 +32,8 @@ class AttendanceResponse(BaseModel):
     attendance_id: int
     student_id: int
     date: date
-    check_in_time: Optional[datetime]
-    check_out_time: Optional[datetime]
+    check_in_time: Optional[time]
+    check_out_time: Optional[time]
     status: AttendanceStatus
     is_late: bool
     is_no_show: bool
@@ -45,9 +45,9 @@ class AttendanceHistoryResponse(BaseModel):
     attendance_id: int
     date: date
     status: AttendanceStatus
-    check_in_time: Optional[datetime]
-    check_out_time: Optional[datetime]
-    is_late: bool
+    check_in_time: Optional[time] | None
+    check_out_time: Optional[time] |None
+    is_late: bool |None
 
     class Config:
         from_attributes = True
@@ -91,18 +91,25 @@ def check_if_late(check_in_time: datetime, expected_time: Optional[time]) -> boo
     return check_in_only > expected_time
 
 
-async def get_expected_pickup_time(db: AsyncSession, student_id: int, route_id: int) -> Optional[time]:
+# async def get_expected_pickup_time(db: AsyncSession, student_id: int, route_id: int) -> Optional[time]:
     
-    result = await db.execute(
-        select(StudentRoute).where(
-            StudentRoute.student_id == student_id,
-            StudentRoute.route_id == route_id
-        )
-    )
-    student_route = result.scalar_one_or_none()
+#     result = await db.execute(
+#         select(StudentRoute).where(
+#             StudentRoute.student_id == student_id,
+#             StudentRoute.route_id == route_id
+#         )
+#     )
+#     student_route = result.scalar_one_or_none()
 
-    if student_route and student_route.pickup_stop:
-        return student_route.pickup_stop.expected_time
+#     if student_route and student_route.pickup_stop:
+#         return student_route.pickup_stop.expected_time
+#     return None
+
+
+async def get_expected_pickup_time(db: AsyncSession, student_id: int, route_id: int) -> Optional[time]:
+    """Get expected pickup time for a student on a route"""
+    # For now, return None since expected_time isn't implemented yet
+    # You can implement this later when you add expected_time to route_stops
     return None
 
 #CHECK-IN ENDPOINT
@@ -249,7 +256,7 @@ async def check_out(
 async def get_attendance_history(
     student_id: int,
     days: int = Query(30, ge=1, le=365),
-    current_user = Depends(login_required),
+    # current_user = Depends(login_required),
     db: AsyncSession = Depends(get_db)
 ):
    
@@ -369,16 +376,22 @@ async def report_absence(
     - Sets status to PENDING (awaiting admin approval)
     - Reason is required
     """
-    # Verify student exists
-    student = db.query(Student).filter(Student.student_id == request.student_id).first()
+    # Verify student exists - FIXED: Use select() instead of query()
+    result = await db.execute(
+        select(Student).where(Student.student_id == request.student_id)
+    )
+    student = result.scalar_one_or_none()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
-    # Check for duplicate report
-    existing = db.query(Absence).filter(
-        Absence.student_id == request.student_id,
-        Absence.date == request.date
-    ).first()
+    # Check for duplicate report - FIXED: Use select() instead of query()
+    result = await db.execute(
+        select(Absence).where(
+            Absence.student_id == request.student_id,
+            Absence.date == request.date
+        )
+    )
+    existing = result.scalar_one_or_none()
 
     if existing:
         raise HTTPException(status_code=400, detail="Absence already reported for this date")
@@ -392,8 +405,8 @@ async def report_absence(
     )
 
     db.add(absence)
-    db.commit()
-    db.refresh(absence)
+    await db.commit()  # FIXED: Add await
+    await db.refresh(absence)  # FIXED: Add await
 
     return absence
 
@@ -504,3 +517,129 @@ async def reject_absence(
         "message": "Absence rejected successfully",
         "absence": absence
     }
+
+
+@router.get("/test-route")
+async def test_route():
+    return {"message": "Attendance router is working!"}
+
+@router.post("/checkout-test")
+async def check_out_test(request: CheckOutRequest):
+    """Temporary test endpoint without auth"""
+    return {
+        "message": "Checkout test working!",
+        "student_id": request.student_id,
+        "bus_id": request.bus_id
+    }
+
+
+# Add to your attendance router file
+@router.get("/debug-routes")
+async def debug_routes():
+    return {"message": "Attendance router is active", "routes": [
+        "/checkin", "/checkout", "/history/{student_id}", 
+        "/summary/{student_id}", "/mark-missed-pickups/{route_id}",
+        "/absence", "/absences/{student_id}", "/absences/pending",
+        "/absences/{absence_id}/approve", "/absences/{absence_id}/reject"
+    ]}
+
+
+@router.post("/test-checkout-no-auth")
+async def test_checkout_no_auth(
+    request: CheckOutRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """Temporary test endpoint without authentication"""
+    today = date.today()
+    
+    # Find attendance record
+    result = await db.execute(
+        select(Attendance).where(
+            Attendance.student_id == request.student_id,
+            Attendance.bus_id == request.bus_id,
+            Attendance.date == today,
+            Attendance.check_in_time != None
+        )
+    )
+    attendance = result.scalar_one_or_none()
+    
+    if not attendance:
+        raise HTTPException(status_code=404, detail="No check-in record found for today")
+    
+    if attendance.check_out_time:
+        raise HTTPException(status_code=400, detail="Student already checked out")
+    
+    attendance.check_out_time = datetime.now()
+    await db.commit()
+    await db.refresh(attendance)
+    
+    return attendance
+
+@router.post("/test-checkin-no-auth")
+async def test_checkin_no_auth(
+    request: CheckInRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """Simplified test endpoint without authentication"""
+    try:
+        from datetime import date, datetime
+        
+        # Verify student exists
+        result = await db.execute(
+            select(Student).where(Student.student_id == request.student_id)
+        )
+        student = result.scalar_one_or_none()
+        if not student:
+            return {"error": f"Student {request.student_id} not found"}
+
+        # Check if student is assigned to this route
+        result = await db.execute(
+            select(StudentRoute).where(
+                StudentRoute.student_id == request.student_id,
+                StudentRoute.route_id == request.route_id
+            )
+        )
+        student_route = result.scalar_one_or_none()
+
+        if not student_route:
+            return {"error": f"Student {request.student_id} not assigned to route {request.route_id}"}
+
+        # Check already checked in today
+        today = date.today()
+        result = await db.execute(
+            select(Attendance).where(
+                Attendance.student_id == request.student_id,
+                Attendance.route_id == request.route_id,
+                Attendance.date == today
+            )
+        )
+        existing = result.scalar_one_or_none()
+
+        if existing and existing.check_in_time:
+            return {"error": "Student already checked in today", "check_in_time": str(existing.check_in_time)}
+
+        # Create attendance record
+        now = datetime.now()
+        attendance = Attendance(
+            student_id=request.student_id,
+            bus_id=request.bus_id,
+            route_id=request.route_id,
+            date=today,
+            check_in_time=now,
+            status=AttendanceStatus.PRESENT,
+            is_late=False,
+            is_no_show=False
+        )
+        db.add(attendance)
+        await db.commit()
+        await db.refresh(attendance)
+        
+        return {
+            "message": "Check-in successful",
+            "attendance_id": attendance.attendance_id,
+            "student_id": attendance.student_id,
+            "check_in_time": str(attendance.check_in_time),
+            "status": str(attendance.status)
+        }
+    except Exception as e:
+        return {"error": str(e), "type": str(type(e).__name__)}

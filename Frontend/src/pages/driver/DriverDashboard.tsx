@@ -3,13 +3,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Tabs } from '../../components/ui/Tabs';
 import { StudentList } from '../../components/driver/StudentList';
 import { IncidentReport } from '../../components/driver/IncidentReport';
+import { DriverSOSPanel } from '../../components/driver/DriverSOSPanel';
+import { SosButton } from '../../components/driver/SosButton';
 import { Card } from '../../components/ui/Card';
 import {
   MapPin,
   Clock,
   Users,
   Route as RouteIcon,
-  AlertTriangle } from
+  AlertTriangle,
+  Siren } from
 'lucide-react';
 export function DriverDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -28,6 +31,11 @@ export function DriverDashboard() {
     id: 'incidents',
     label: 'Report Issue',
     icon: <AlertTriangle className="h-4 w-4" />
+  },
+  {
+    id: 'sos',
+    label: 'SOS',
+    icon: <Siren className="h-4 w-4" />
   }];
 
   const pageVariants = {
@@ -66,6 +74,7 @@ export function DriverDashboard() {
             <p className="text-gray-600 mt-2">Bus 001 • Started at 07:00 AM</p>
           </div>
           <div className="flex space-x-3">
+            <SosButton />
             <div className="bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-200 flex items-center hover:shadow-md transition-shadow duration-200">
               <Clock className="h-5 w-5 text-primary-600 mr-2" />
               <span className="font-bold text-gray-900">07:42 AM</span>
@@ -321,6 +330,22 @@ export function DriverDashboard() {
             className="max-w-2xl mx-auto">
 
               <IncidentReport />
+            </motion.div>
+          }
+
+          {activeTab === 'sos' &&
+          <motion.div
+            key="sos"
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{
+              duration: 0.3
+            }}
+            className="max-w-3xl mx-auto">
+
+              <DriverSOSPanel />
             </motion.div>
           }
         </AnimatePresence>

@@ -15,5 +15,6 @@ class Incident(Base):
     reported_by = Column(Integer, ForeignKey("drivers.driver_id"))
     route_id = Column(Integer, ForeignKey("routes.route_id"))
     description = Column(Text)
-    type = Column(Enum(IncidentType))
+    type = Column(String(20))
+    severity = Column(String(10))
     reported_at = Column(DateTime(timezone=True), server_default=func.now())
