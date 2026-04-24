@@ -70,6 +70,7 @@ export function AdminDashboard() {
   label: 'Register Requests',
   icon: <UserPlus className="h-4 w-4" />
   },
+  {
     id: 'incidents',
     label: 'Incidents',
     icon: <ShieldAlert className="h-4 w-4" />
