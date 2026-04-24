@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
-
+from routes.notification import create_notification
 from database import async_session, get_db
 from models.student import Student, StudentStatus
 from models.parent import Parent
@@ -94,5 +94,15 @@ async def create_student(student: StudentCreate, token: dict = Depends(role_requ
         )  
         session.add(new_student)
         await session.commit()
+       # INSIDE create_student(), after session.refresh(new_student):
         await session.refresh(new_student)
+        
+        # 🔔 Notify parent that their child was added
+        await create_notification(
+            db=session,
+            user_id=parent.user_id,
+            message=f"Student {new_student.full_name} has been registered in the system.",
+            type="announcement"
+        )
+        
         return new_student
