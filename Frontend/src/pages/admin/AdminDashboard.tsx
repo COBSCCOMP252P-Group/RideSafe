@@ -7,6 +7,7 @@ import { Badge } from '../../components/ui/Badge';
 import { RoutePlanner } from '../../components/admin/RoutePlanner';
 import { LateStudentWarnings } from '../../components/admin/LateStudentWarnings';
 import { UserRegistration } from '../../components/admin/UserRegistration';
+import { ViewRegisterRequests } from "./ViewRegisterRequests";
 import { PaymentPlansManager } from '../../components/admin/PaymentPlansManager';
 import { PaymentsViewer } from '../../components/admin/PaymentsViewer';
 import { IncidentsViewer, RecentIncidents } from '../../components/admin/IncidentsViewer';
@@ -65,6 +66,10 @@ export function AdminDashboard() {
     icon: <CreditCard className="h-4 w-4" />
   },
   {
+  id: 'register-requests',
+  label: 'Register Requests',
+  icon: <UserPlus className="h-4 w-4" />
+  },
     id: 'incidents',
     label: 'Incidents',
     icon: <ShieldAlert className="h-4 w-4" />
@@ -122,6 +127,9 @@ export function AdminDashboard() {
     color: 'green',
     gradient: 'from-green-500 to-green-600'
   }];
+
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [view, setView] = useState("users"); 
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-primary-50/20">
@@ -437,6 +445,29 @@ export function AdminDashboard() {
             </motion.div>
           }
 
+          {activeTab === 'register-requests' && (
+            <motion.div
+              key="register-requests"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.3 }}
+            >
+              {selectedRequest ? (
+                <UserRegistration
+                  requestData={selectedRequest}
+                  onCancelRequest={() => setSelectedRequest(null)}
+                />
+              ) : (
+                <ViewRegisterRequests
+                  onSelect={(req: any) => {
+                    setSelectedRequest(req);
+                  }}
+                />
+              )}
+            </motion.div>
+)}
           {activeTab === 'incidents' &&
           <motion.div
             key="incidents"

@@ -26,7 +26,7 @@ import {
   UserCircle,
   BoxIcon } from
 'lucide-react';
-export function UserRegistration() {
+export function UserRegistration({ requestData, onCancelRequest }: any) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -69,6 +69,32 @@ export function UserRegistration() {
     vehicleNo: '',
     emergencyContact: ''
   });
+
+  useEffect(() => {
+  if (requestData) {
+    setEditingUser(null);
+
+    setFormData({
+      username: requestData.email
+        ? requestData.email.split("@")[0]
+        : requestData.parent_name.replace(/\s+/g, "").toLowerCase(),
+      name: requestData.parent_name || "",
+      email: requestData.email || "",
+      role: "parent",
+      phone: requestData.phone_number || "",
+      address: requestData.address || "",
+      password: "",
+      confirmPassword: "",
+      studentIndex: requestData.student_index || "",
+      studentName: requestData.student_name || "",
+      studentGrade: requestData.student_grade || "",
+      vehicleNo: "",
+      emergencyContact: "",
+    });
+
+    setIsModalOpen(true);
+  }
+}, [requestData]);
 
 const handleOpenModal = (user?: User) => {
     if (user) {
@@ -777,7 +803,12 @@ const handleSubmit = async (e: React.FormEvent) => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setIsModalOpen(false)}
+              onClick={() => {
+                  setIsModalOpen(false);
+                  if (onCancelRequest) {
+                    onCancelRequest();
+                }
+              }} 
               className="bg-white border-gray-200 hover:bg-gray-50 px-6"
             >
               Cancel
