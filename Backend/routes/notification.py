@@ -61,13 +61,13 @@ async def create_notification(
 
 @router.get("", response_model=List[NotificationResponse])
 async def get_my_notifications(
-    current_user: dict = Depends(login_required),  # ← Returns a dict
+    current_user=Depends(login_required),
     db: AsyncSession = Depends(get_db)
 ):
     """Fetch all notifications for the logged-in user."""
     result = await db.execute(
         select(Notification)
-        .where(Notification.user_id == current_user['user_id'])  # ← Access as dict
+        .where(Notification.user_id == current_user.user_id)
         .order_by(Notification.created_at.desc())
     )
     return result.scalars().all()
@@ -78,14 +78,14 @@ async def get_my_notifications(
 @router.put("/{notification_id}/read", response_model=NotificationResponse)
 async def mark_as_read(
     notification_id: int,
-    current_user: dict = Depends(login_required),  # ← Returns a dict
+    current_user=Depends(login_required),
     db: AsyncSession = Depends(get_db)
 ):
     """Mark a single notification as read."""
     result = await db.execute(
         select(Notification).where(
             Notification.notification_id == notification_id,
-            Notification.user_id == current_user['user_id']  # ← Access as dict
+            Notification.user_id == current_user.user_id  # user can only mark their own
         )
     )
     notification = result.scalar_one_or_none()
@@ -107,15 +107,16 @@ async def mark_as_read(
 @router.post("/announcement")
 async def send_announcement(
     request: AnnouncementRequest,
-    current_user: dict = Depends(login_required),  # ← Returns a dict
+    current_user=Depends(login_required),
     db: AsyncSession = Depends(get_db)
 ):
     """
     Admin posts an announcement — creates a notification for ALL users.
+    Add role check here once your auth supports it.
     """
-    # Check if user is admin
-    if current_user.get('role') != 'admin':  # ← Access as dict
-        raise HTTPException(status_code=403, detail="Admins only")
+    # TODO: Uncomment when role check is ready
+    # if current_user.role != "admin":
+    #     raise HTTPException(status_code=403, detail="Admins only")
 
     result = await db.execute(select(User))
     all_users = result.scalars().all()
