@@ -3,7 +3,7 @@ from sqlalchemy.future import select
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import date
-
+from routes.notification import create_notification
 from database import async_session
 from models.payment import Payment
 from models.payment_plan import PaymentPlan
@@ -221,6 +221,15 @@ async def create_payment(payment: PaymentCreate, token_data: dict = Depends(role
 
         session.add(new_payment)
         await session.commit()
+       # INSIDE create_payment(), after session.refresh(new_payment):
         await session.refresh(new_payment)
-
+        
+        # 🔔 Notify parent - payment successful
+        await create_notification(
+            db=session,
+            user_id=user_id,
+            message=f"Payment of ${payment.amount} received successfully.",
+            type="announcement"
+        )
+        
         return new_payment
