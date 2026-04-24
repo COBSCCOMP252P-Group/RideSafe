@@ -16,3 +16,4 @@ from .student_temp_location import StudentTempLocation
 from .location import Location
 from .payment_plan import PaymentPlan
 from .payment import Payment
+from .qr_code import QRCode
