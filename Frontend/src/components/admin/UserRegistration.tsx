@@ -8,6 +8,9 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Badge } from '../ui/Badge';
 import { MOCK_USERS } from '../../utils/mockData';
+import { useEffect } from 'react';
+import { getAllUsers, createAdminUser, createDriverUser, createParentAndStudent, deleteUser } from '../../services/userService';
+import { mapBackendUserToUi } from '../../utils/userMappers';
 import { User, UserRole } from '../../types';
 import {
   UserPlus,
@@ -23,97 +26,172 @@ import {
   UserCircle,
   BoxIcon } from
 'lucide-react';
-export function UserRegistration() {
-  const [users, setUsers] = useState(MOCK_USERS);
+export function UserRegistration({ requestData, onCancelRequest }: any) {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(''); 
   const [selectedRole, setSelectedRole] = useState<UserRole | 'all'>('all');
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      const data = await getAllUsers();
+      setUsers(data.map(mapBackendUserToUi));
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Form state
   const [formData, setFormData] = useState({
-  name: '',
-  email: '',
-  role: 'parent' as UserRole,
-  phone: '',
-  address: '',
-  password: '',
-  studentIndex: '',
-  studentName: '',
-  studentGrade: '',
-  vehicleNo: '',
-  emergencyContact: ''
+    username: '',
+    name: '',
+    email: '',
+    role: 'parent',
+    phone: '',
+    address: '',
+    password: '',
+    confirmPassword: '',
+    studentIndex: '',
+    studentName: '',
+    studentGrade: '',
+    vehicleNo: '',
+    emergencyContact: ''
   });
-  const handleOpenModal = (user?: User) => {
-  if (user) {
-    setEditingUser(user);
-    setFormData({
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      phone: '',
-      address: '',
-      password: '',
-      studentIndex: '',
-      studentName: '',
-      studentGrade: '',
-      vehicleNo: '',
-      emergencyContact: ''
-    });
-  } else {
+
+  useEffect(() => {
+  if (requestData) {
     setEditingUser(null);
+
     setFormData({
+      username: requestData.email
+        ? requestData.email.split("@")[0]
+        : requestData.parent_name.replace(/\s+/g, "").toLowerCase(),
+      name: requestData.parent_name || "",
+      email: requestData.email || "",
+      role: "parent",
+      phone: requestData.phone_number || "",
+      address: requestData.address || "",
+      password: "",
+      confirmPassword: "",
+      studentIndex: requestData.student_index || "",
+      studentName: requestData.student_name || "",
+      studentGrade: requestData.student_grade || "",
+      vehicleNo: "",
+      emergencyContact: "",
+    });
+
+    setIsModalOpen(true);
+  }
+}, [requestData]);
+
+const handleOpenModal = (user?: User) => {
+    if (user) {
+      setEditingUser(user);
+      setFormData({
+        username: user.username || '',
+        name: user.name || '',
+        email: user.email || '',
+        role: user.role || 'parent',
+        phone: user.phone || '',
+        address: '',
+        password: '',
+        confirmPassword: '',
+        studentIndex: '',
+        studentName: '',
+        studentGrade: '',
+        vehicleNo: '',
+        emergencyContact: ''
+      });
+    } else {
+      setEditingUser(null);
+      setFormData({
+        username: '',
+        name: '',
+        email: '',
+        role: 'parent',
+        phone: '',
+        address: '',
+        password: '',
+        confirmPassword: '',
+        studentIndex: '',
+        studentName: '',
+        studentGrade: '',
+        vehicleNo: '',
+        emergencyContact: ''
+      });
+    }
+  setIsModalOpen(true);
+};
+
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  try {
+    if (formData.password !== formData.confirmPassword) {
+      alert('Password and Confirm Password do not match');
+      return;
+    }
+
+    if (formData.role === 'admin') {
+      await createAdminUser(formData);
+    } else if (formData.role === 'driver') {
+      await createDriverUser(formData);
+    } else if (formData.role === 'parent') {
+      await createParentAndStudent(formData);
+    }
+
+    await loadUsers();
+
+    setIsModalOpen(false);
+    setEditingUser(null);
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000);
+
+    setFormData({
+      username: '',
       name: '',
       email: '',
       role: 'parent',
       phone: '',
       address: '',
       password: '',
+      confirmPassword: '',
       studentIndex: '',
       studentName: '',
       studentGrade: '',
       vehicleNo: '',
       emergencyContact: ''
     });
+  } catch (err: any) {
+    console.error(err);
+    alert(err.message || 'Failed to save user');
   }
-  setIsModalOpen(true);
 };
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingUser) {
-      // Update existing user
-      setUsers(
-        users.map((u) =>
-        u.id === editingUser.id ?
-        {
-          ...u,
-          name: formData.name,
-          email: formData.email,
-          role: formData.role
-        } :
-        u
-        )
-      );
-    } else {
-      // Add new user
-      const newUser: User = {
-        id: `u${users.length + 1}`,
-        name: formData.name,
-        email: formData.email,
-        role: formData.role,
-        avatar: `https://i.pravatar.cc/150?u=${formData.email}`
-      };
-      setUsers([...users, newUser]);
-    }
-    setIsModalOpen(false);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
-  };
-  const handleDelete = (userId: string) => {
+  
+  const handleDelete = async (userId: number) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
-      setUsers(users.filter((u) => u.id !== userId));
+      try {
+        await deleteUser(userId);
+        await loadUsers();
+      } catch (err: any) {
+        console.error(err);
+        alert(err.message || 'Failed to delete user');
+      }
     }
   };
+
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -121,6 +199,7 @@ export function UserRegistration() {
     const matchesRole = selectedRole === 'all' || user.role === selectedRole;
     return matchesSearch && matchesRole;
   });
+
   const getRoleIcon = (role: UserRole) => {
     switch (role) {
       case 'parent':
@@ -373,7 +452,7 @@ export function UserRegistration() {
                     whileTap={{
                       scale: 0.9
                     }}
-                    onClick={() => handleDelete(user.id)}
+                    onClick={() => handleDelete(user.backendUserId)}
                     className="p-2 rounded-lg bg-white/50 backdrop-blur-sm hover:bg-red-100 text-red-600 transition-all duration-200 border border-white/20">
 
                       <Trash2 className="h-4 w-4" />
@@ -410,282 +489,292 @@ export function UserRegistration() {
 
       {/* Add/Edit User Modal */}
        {isModalOpen && (
-  <div className="fixed inset-0 z-50 bg-gradient-to-br from-slate-50 via-white to-purple-50 overflow-y-auto">
-    <div className="min-h-screen px-4 py-10 md:px-8">
-      <div className="max-w-5xl mx-auto">
+  <div className="fixed top-20 left-0 right-0 bottom-0 z-40 bg-black/30 backdrop-blur-sm flex items-start justify-center overflow-y-auto px-4 py-6">
+    
+    <div className="w-full max-w-4xl bg-white rounded-[28px] shadow-[0_20px_60px_rgba(109,40,217,0.10)] border border-purple-100 overflow-hidden h-full max-h-full flex flex-col">
+      
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100 shrink-0">
+        <div>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+            {editingUser ? 'Edit User' : 'Create New User'}
+          </h2>
+          <p className="text-gray-500 mt-2">
+            Fill in the details below to {editingUser ? 'update' : 'register'} a user
+          </p>
+        </div>
+      </div>
+
+      {/* Scrollable Body */}
+      <div className="overflow-y-auto flex-1">
         
-        {/* Top bar */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
-              {editingUser ? 'Edit User' : 'Create New User'}
-            </h2>
-            <p className="text-gray-500 mt-2">
-              Fill in the details below to {editingUser ? 'update' : 'register'} a user
-            </p>
+        {/* Header strip */}
+        <div className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-500 px-8 py-8 text-white">
+          <div className="flex items-center gap-4">
+            <div className="h-16 w-16 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md">
+              <UserPlus className="h-8 w-8" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold">
+                User Registration Form
+              </h3>
+              <p className="text-white/80 mt-1">
+                Clean and role-based user creation page
+              </p>
+            </div>
           </div>
-
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setIsModalOpen(false)}
-            className="border-gray-200 bg-white hover:bg-gray-50 shadow-sm"
-          >
-            Cancel
-          </Button>
         </div>
 
-        {/* Main card */}
-        <div className="bg-white rounded-[28px] shadow-[0_20px_60px_rgba(109,40,217,0.10)] border border-purple-100 overflow-hidden">
+        <form onSubmit={handleSubmit} className="p-8 md:p-10 space-y-8">
           
-          {/* Header strip */}
-          <div className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-500 px-8 py-8 text-white">
-            <div className="flex items-center gap-4">
-              <div className="h-16 w-16 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md">
-                <UserPlus className="h-8 w-8" />
-              </div>
-              <div>
-                <h3 className="text-2xl font-bold">
-                  User Registration Form
-                </h3>
-                <p className="text-white/80 mt-1">
-                  Clean and role-based user creation page
-                </p>
-              </div>
+          {/* Basic details */}
+          <div>
+            <h4 className="text-lg font-semibold text-gray-900 mb-5">
+              Basic Information
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+              <Input
+                label="Full Name"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    name: e.target.value
+                  })
+                }
+                required
+                placeholder="Enter full name"
+                className="bg-white border border-gray-200 rounded-xl shadow-sm"
+              />
+
+              <Input
+                label="Email Address"
+                type="email"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    email: e.target.value
+                  })
+                }
+                required
+                placeholder="Enter email address"
+                className="bg-white border border-gray-200 rounded-xl shadow-sm"
+              />
+
+              <Input
+                label="Phone Number"
+                type="tel"
+                value={formData.phone}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    phone: e.target.value
+                  })
+                }
+                placeholder="Enter phone number"
+                className="bg-white border border-gray-200 rounded-xl shadow-sm"
+              />
+
+              <Select
+                label="User Role"
+                value={formData.role}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    role: e.target.value as UserRole
+                  })
+                }
+                options={[
+                  { value: 'parent', label: 'Parent' },
+                  { value: 'driver', label: 'Driver' },
+                  { value: 'admin', label: 'Admin' }
+                ]}
+                className="bg-white border border-gray-200 rounded-xl shadow-sm"
+              />
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-8 md:p-10 space-y-8">
-            
-            {/* Basic details */}
+          {/* Role based fields */}
+          {formData.role === 'parent' && (
             <div>
               <h4 className="text-lg font-semibold text-gray-900 mb-5">
-                Basic Information
+                Student Details
               </h4>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                 <Input
-                  label="Full Name"
-                  value={formData.name}
+                  label="Student Index"
+                  value={formData.studentIndex}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      name: e.target.value
+                      studentIndex: e.target.value
                     })
                   }
-                  required
-                  placeholder="Enter full name"
+                  placeholder="Enter student index"
                   className="bg-white border border-gray-200 rounded-xl shadow-sm"
                 />
 
                 <Input
-                  label="Email Address"
-                  type="email"
-                  value={formData.email}
+                  label="Student Name"
+                  value={formData.studentName}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      email: e.target.value
+                      studentName: e.target.value
                     })
                   }
-                  required
-                  placeholder="Enter email address"
+                  placeholder="Enter student name"
                   className="bg-white border border-gray-200 rounded-xl shadow-sm"
                 />
 
                 <Input
-                  label="Phone Number"
-                  type="tel"
-                  value={formData.phone}
+                  label="Student Grade"
+                  value={formData.studentGrade}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      phone: e.target.value
+                      studentGrade: e.target.value
                     })
                   }
-                  placeholder="Enter phone number"
+                  placeholder="Enter student grade"
                   className="bg-white border border-gray-200 rounded-xl shadow-sm"
                 />
 
-                <Select
-                  label="User Role"
-                  value={formData.role}
+                <Input
+                  label="Address"
+                  value={formData.address}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      role: e.target.value as UserRole
+                      address: e.target.value
                     })
                   }
-                  options={[
-                    { value: 'parent', label: 'Parent' },
-                    { value: 'driver', label: 'Driver' },
-                    { value: 'admin', label: 'Admin' }
-                  ]}
+                  placeholder="Enter address"
                   className="bg-white border border-gray-200 rounded-xl shadow-sm"
                 />
               </div>
             </div>
+          )}
 
-            {/* Role based fields */}
-            {formData.role === 'parent' && (
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-5">
-                  Student Details
-                </h4>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                  <Input
-                    label="Student Index"
-                    value={formData.studentIndex}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        studentIndex: e.target.value
-                      })
-                    }
-                    placeholder="Enter student index"
-                    className="bg-white border border-gray-200 rounded-xl shadow-sm"
-                  />
-
-                  <Input
-                    label="Student Name"
-                    value={formData.studentName}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        studentName: e.target.value
-                      })
-                    }
-                    placeholder="Enter student name"
-                    className="bg-white border border-gray-200 rounded-xl shadow-sm"
-                  />
-
-                  <Input
-                    label="Student Grade"
-                    value={formData.studentGrade}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        studentGrade: e.target.value
-                      })
-                    }
-                    placeholder="Enter student grade"
-                    className="bg-white border border-gray-200 rounded-xl shadow-sm"
-                  />
-
-                  <Input
-                    label="Address"
-                    value={formData.address}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        address: e.target.value
-                      })
-                    }
-                    placeholder="Enter address"
-                    className="bg-white border border-gray-200 rounded-xl shadow-sm"
-                  />
-                </div>
-              </div>
-            )}
-
-            {formData.role === 'driver' && (
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-5">
-                  Driver Details
-                </h4>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                  <Input
-                    label="Vehicle No"
-                    value={formData.vehicleNo}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        vehicleNo: e.target.value
-                      })
-                    }
-                    placeholder="Enter vehicle number"
-                    className="bg-white border border-gray-200 rounded-xl shadow-sm"
-                  />
-
-                  <Input
-                    label="Emergency Contact"
-                    value={formData.emergencyContact}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        emergencyContact: e.target.value
-                      })
-                    }
-                    placeholder="Enter emergency contact"
-                    className="bg-white border border-gray-200 rounded-xl shadow-sm"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Admin gets only default fields, so no extra section */}
-
-            {/* Security */}
+          {formData.role === 'driver' && (
             <div>
               <h4 className="text-lg font-semibold text-gray-900 mb-5">
-                Security
+                Driver Details
               </h4>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                 <Input
-                  label="Password"
-                  type="password"
-                  value={formData.password}
+                  label="Vehicle No"
+                  value={formData.vehicleNo}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      password: e.target.value
+                      vehicleNo: e.target.value
                     })
                   }
-                  required
-                  placeholder="Enter password"
+                  placeholder="Enter vehicle number"
                   className="bg-white border border-gray-200 rounded-xl shadow-sm"
                 />
 
                 <Input
-                  label="Confirm Password"
-                  type="password"
-                  value={formData.password}
+                  label="Emergency Contact"
+                  value={formData.emergencyContact}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      password: e.target.value
+                      emergencyContact: e.target.value
                     })
                   }
-                  required
-                  placeholder="Confirm password"
-                  className="bg-white border border-gray-200 rounded-xxl shadow-sm"
+                  placeholder="Enter emergency contact"
+                  className="bg-white border border-gray-200 rounded-xl shadow-sm"
                 />
               </div>
             </div>
+          )}
 
-            {/* Buttons */}
-            <div className="flex justify-end gap-4 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsModalOpen(false)}
-                className="bg-white border-gray-200 hover:bg-gray-50 px-6"
-              >
-                Cancel
-              </Button>
+          {/* Security */}
+          <div>
+            <h4 className="text-lg font-semibold text-gray-900 mb-5">
+              Security
+            </h4>
 
-              <Button
-                type="submit"
-                className="px-8 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 shadow-lg"
-              >
-                {editingUser ? 'Update User' : 'Create User'}
-              </Button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+             <Input
+                label="Username"
+                type="text"
+                value={formData.username}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    username: e.target.value
+                  })
+                }
+                required
+                placeholder="Enter username"
+                className="bg-white border border-gray-200 rounded-xl shadow-sm"
+              />
             </div>
-          </form>
-        </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mt-6">
+              <Input
+                label="Password"
+                type="password"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    password: e.target.value
+                  })
+                }
+                required
+                placeholder="Enter password"
+                className="bg-white border border-gray-200 rounded-xl shadow-sm"
+              />
+
+              <Input
+                label="Confirm Password"
+                type="password"
+                value={formData.confirmPassword}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    confirmPassword: e.target.value
+                  })
+                }
+                required
+                placeholder="Confirm password"
+                className="bg-white border border-gray-200 rounded-xl shadow-sm"
+              />
+            </div>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex justify-end gap-4 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                  setIsModalOpen(false);
+                  if (onCancelRequest) {
+                    onCancelRequest();
+                }
+              }} 
+              className="bg-white border-gray-200 hover:bg-gray-50 px-6"
+            >
+              Cancel
+            </Button>
+
+            <Button
+              type="submit"
+              className="px-8 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 shadow-lg"
+            >
+              {editingUser ? 'Update User' : 'Create User'}
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

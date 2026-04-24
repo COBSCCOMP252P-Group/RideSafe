@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.future import select
 from pydantic import BaseModel
 from typing import Optional, List
@@ -6,6 +6,8 @@ from typing import Optional, List
 from database import async_session
 from models.parent import Parent
 from models.user import User
+from models.student import Student
+from auth.dependencies import role_required
 
 router = APIRouter(
     prefix="/parents",
@@ -42,13 +44,23 @@ class ParentResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class StudentOut(BaseModel):
+    student_id: int
+    full_name: str
+    grade: Optional[str] = None
+    index_no: Optional[str] = None
+    status: str
+
+    class Config:
+        from_attributes = True
+
 
 # ==========================
 # CREATE PARENT + USER
 # ==========================
 
 @router.post("/", response_model=ParentResponse, status_code=status.HTTP_201_CREATED)
-async def create_parent(parent: ParentCreate):
+async def create_parent(parent: ParentCreate, token: dict = Depends(role_required(["admin"]))):
     async with async_session() as session:
 
         # Check username already exists
@@ -103,6 +115,28 @@ async def get_parents():
         result = await session.execute(select(Parent))
         return result.scalars().all()
 
+# ==========================
+# GET ALL STUDENTS FOR A PARENT
+# ==========================
+
+@router.get("/students", response_model=List[StudentOut])
+async def get_students_for_parent(token: dict = Depends(role_required(["parent"]))):
+    async with async_session() as session:
+        # Check if parent exists
+        result = await session.execute(
+            select(Parent).where(Parent.user_id == token["user_id"])
+        )
+        parent = result.scalar_one_or_none()
+        if not parent:
+            raise HTTPException(status_code=404, detail="Parent not found")
+        
+        # Get students
+        result = await session.execute(
+            select(Student).where(Student.parent_id == parent.parent_id)
+        )
+        students = result.scalars().all()
+        
+        return students
 
 # ==========================
 # GET PARENT BY ID
