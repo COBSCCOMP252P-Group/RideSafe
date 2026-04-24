@@ -13,6 +13,7 @@ import { PaymentsViewer } from '../../components/admin/PaymentsViewer';
 import { IncidentsViewer, RecentIncidents } from '../../components/admin/IncidentsViewer';
 import { SOSAlertsManager } from '../../components/admin/SOSAlertsManager';
 import { MOCK_ROUTES } from '../../utils/mockData';
+import GenReport from "./GenReport";
 import {
   LayoutDashboard,
   Users,
@@ -28,6 +29,7 @@ import {
   Siren } from 'lucide-react';
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
+  const [showReport, setShowReport] = useState(false);
   const tabs = [
   {
     id: 'overview',
@@ -38,11 +40,6 @@ export function AdminDashboard() {
     id: 'users',
     label: 'User Management',
     icon: <UserPlus className="h-4 w-4" />
-  },
-  {
-    id: 'students',
-    label: 'Students',
-    icon: <Users className="h-4 w-4" />
   },
   {
     id: 'routes',
@@ -95,39 +92,40 @@ export function AdminDashboard() {
       y: -20
     }
   };
-  const statsData = [
+   const statsData = [
   {
     label: 'Total Students',
     value: '1,248',
     change: '+2.5%',
     icon: Users,
-    color: 'primary',
-    gradient: 'from-primary-500 to-primary-600'
+    gradient: 'from-purple-100 to-purple-200',
+    iconBg: 'bg-purple-400'
   },
   {
     label: 'Active Buses',
     value: '18/20',
     subtext: '2 in maintenance',
     icon: Bus,
-    color: 'blue',
-    gradient: 'from-blue-500 to-blue-600'
+    gradient: 'from-blue-100 to-blue-200',
+    iconBg: 'bg-blue-400'
   },
   {
     label: 'Active Incidents',
     value: '3',
     subtext: 'Requires attention',
     icon: AlertTriangle,
-    color: 'red',
-    gradient: 'from-red-500 to-red-600'
+    gradient: 'from-pink-100 to-rose-200',
+    iconBg: 'bg-rose-400'
   },
   {
     label: 'On-Time Rate',
     value: '94%',
     subtext: 'Avg delay: 2 mins',
     icon: TrendingUp,
-    color: 'green',
-    gradient: 'from-green-500 to-green-600'
-  }];
+    gradient: 'from-green-100 to-emerald-200',
+    iconBg: 'bg-emerald-400'
+  }
+];
 
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [view, setView] = useState("users"); 
@@ -135,6 +133,12 @@ export function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-primary-50/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        {showReport ? (
+          <GenReport onBack={() => setShowReport(false)} />
+        ) : (
+          <>
+        
         {/* Header */}
         <motion.div
           initial={{
@@ -158,15 +162,10 @@ export function AdminDashboard() {
           <div className="flex space-x-3">
             <Button
               variant="outline"
-              leftIcon={<Download className="h-4 w-4" />}>
-
+              onClick={() => setShowReport(true)}
+              leftIcon={<Download className="h-4 w-4" />}
+                >
               Export Report
-            </Button>
-            <Button
-              className="bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800"
-              leftIcon={<Plus className="h-4 w-4" />}>
-
-              Add Student
             </Button>
           </div>
         </motion.div>
@@ -212,12 +211,11 @@ export function AdminDashboard() {
 
                     <Card
                   noPadding
-                  className="relative overflow-hidden group hover:shadow-xl transition-all duration-300">
-
+                   className="relative overflow-hidden group rounded-3xl border border-white/50 bg-white/70 backdrop-blur-xl shadow-[0_20px_60px_rgba(124,58,237,0.12)] hover:shadow-[0_25px_80px_rgba(124,58,237,0.22)] hover:-translate-y-1 transition-all duration-300">
                       <div
                     className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}>
                   </div>
-                      <div className="p-6 relative">
+                      <div className={`p-7 rounded-3xl bg-gradient-to-br ${stat.gradient} backdrop-blur-xl`}>
                         <div className="flex justify-between items-start mb-4">
                           <div>
                             <p className="text-sm font-medium text-gray-500">
@@ -240,16 +238,16 @@ export function AdminDashboard() {
                             </motion.h3>
                           </div>
                           <div
-                        className={`p-3 bg-${stat.color}-50 rounded-xl group-hover:scale-110 transition-transform duration-300`}>
+                        className={`p-4 rounded-2xl ${stat.iconBg} shadow-md`}>
 
                             <stat.icon
-                          className={`h-6 w-6 text-${stat.color}-600`} />
+                          className="h-6 w-6 text-white" />
 
                           </div>
                         </div>
                         {stat.change &&
                     <div className="flex items-center text-sm">
-                            <span className="text-green-600 font-medium flex items-center">
+                            <span className="text-emerald-600 font-medium flex items-center">
                               <TrendingUp className="h-3 w-3 mr-1" />{' '}
                               {stat.change}
                             </span>
@@ -258,13 +256,11 @@ export function AdminDashboard() {
                             </span>
                           </div>
                     }
-                        {stat.subtext &&
-                    <p
-                      className={`text-sm text-${stat.color}-600 font-medium mt-2`}>
-
-                            {stat.subtext}
-                          </p>
-                    }
+                      {stat.subtext && (
+                        <p className="text-sm text-gray-600 font-medium mt-2">
+                                {stat.subtext}
+                        </p>
+                      )} 
                       </div>
                     </Card>
                   </motion.div>
@@ -397,25 +393,6 @@ export function AdminDashboard() {
             </motion.div>
           }
 
-          {activeTab === 'students' &&
-          <motion.div
-            key="students"
-            variants={pageVariants}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            transition={{
-              duration: 0.3
-            }}>
-
-              <Card title="Student Management">
-                <p className="text-gray-600">
-                  Student CRUD interface coming soon...
-                </p>
-              </Card>
-            </motion.div>
-          }
-
           {activeTab === 'payment-plans' &&
           <motion.div
             key="payment-plans"
@@ -499,6 +476,8 @@ export function AdminDashboard() {
             </motion.div>
           }
         </AnimatePresence>
+          </>
+        )}
       </div>
     </div>);
 

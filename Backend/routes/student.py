@@ -9,7 +9,7 @@ from models.student import Student, StudentStatus
 from models.parent import Parent
 from auth.dependencies import role_required, login_required
 
-router = APIRouter(prefix="/api/v1/students", tags=["students"])
+router = APIRouter(prefix="/students", tags=["students"])
 
 class StudentCreate(BaseModel):
     full_name: str
