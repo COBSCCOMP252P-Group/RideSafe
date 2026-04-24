@@ -6,6 +6,12 @@ from datetime import datetime, date, time, timedelta
 from typing import List, Optional
 from pydantic import BaseModel
 
+import json
+
+import base64
+import tempfile
+import os
+from fastapi.responses import FileResponse
 from models.attendance import Attendance, AttendanceStatus
 from models.student import Student
 from models.student_route import StudentRoute
@@ -249,7 +255,7 @@ async def check_out(
     await db.commit()
     await db.refresh(attendance)
 
-    return attendance
+#     return attendance
 
 ##attendance history endpoint 
 @router.get("/history/{student_id}", response_model=List[AttendanceHistoryResponse])
@@ -643,3 +649,307 @@ async def test_checkin_no_auth(
         }
     except Exception as e:
         return {"error": str(e), "type": str(type(e).__name__)}
+
+from models.qr_code import QRCode
+from utils.qr_utils import generate_qr_token, create_qr_code_image, get_student_from_qr_token
+from fastapi.responses import HTMLResponse, FileResponse
+import tempfile
+import os
+
+# Generate QR code for a student
+@router.post("/qr/generate/{student_id}")
+async def generate_qr_code(
+    student_id: int,
+    current_user = Depends(login_required),
+    db: AsyncSession = Depends(get_db)
+):
+    """Generate QR code for a student (Admin only)"""
+    
+    # Check if student exists
+    result = await db.execute(
+        select(Student).where(Student.student_id == student_id)
+    )
+    student = result.scalar_one_or_none()
+    
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    
+    # Generate QR token (just student ID)
+    qr_token = generate_qr_token(student_id)
+    
+    # Check if QR code already exists
+    result = await db.execute(
+        select(QRCode).where(QRCode.student_id == student_id)
+    )
+    existing_qr = result.scalar_one_or_none()
+    
+    if existing_qr:
+        # Update existing QR code
+        existing_qr.qr_token = qr_token
+        existing_qr.is_active = True
+        existing_qr.created_at = datetime.now()
+        qr_record = existing_qr
+    else:
+        # Create new QR code
+        qr_record = QRCode(
+            student_id=student_id,
+            qr_token=qr_token,
+            is_active=True
+        )
+        db.add(qr_record)
+    
+    # Generate QR code image
+    qr_image = create_qr_code_image(qr_token)
+    
+    await db.commit()
+    
+    return {
+        "student_id": student_id,
+        "student_name": student.full_name,
+        "qr_token": qr_token,  # This is just the student ID
+        "qr_image_base64": qr_image,
+        "message": "QR code generated successfully"
+    }
+
+# View QR code in browser
+@router.get("/qr/view/{student_id}", response_class=HTMLResponse)
+async def view_qr_code(
+    student_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """View QR code in browser"""
+    
+    result = await db.execute(
+        select(Student).where(Student.student_id == student_id)
+    )
+    student = result.scalar_one_or_none()
+    
+    if not student:
+        return HTMLResponse(content="<h1>Student not found</h1>", status_code=404)
+    
+    # Get or generate QR token
+    result = await db.execute(
+        select(QRCode).where(QRCode.student_id == student_id)
+    )
+    qr_record = result.scalar_one_or_none()
+    
+    if not qr_record:
+        qr_token = generate_qr_token(student_id)
+        qr_record = QRCode(student_id=student_id, qr_token=qr_token)
+        db.add(qr_record)
+        await db.commit()
+    else:
+        qr_token = qr_record.qr_token
+    
+    qr_image = create_qr_code_image(qr_token)
+    
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>QR Code - {student.full_name}</title>
+        <style>
+            body {{
+                font-family: Arial, sans-serif;
+                text-align: center;
+                padding: 50px;
+                background-color: #f0f0f0;
+            }}
+            .qr-container {{
+                background-color: white;
+                padding: 30px;
+                border-radius: 10px;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                display: inline-block;
+            }}
+            img {{
+                max-width: 300px;
+                height: auto;
+            }}
+            button {{
+                margin-top: 20px;
+                padding: 10px 20px;
+                font-size: 16px;
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                margin: 5px;
+            }}
+            button:hover {{
+                background-color: #45a049;
+            }}
+            .info {{
+                margin-top: 20px;
+                font-size: 18px;
+            }}
+            .token {{
+                font-family: monospace;
+                font-size: 20px;
+                background-color: #f5f5f5;
+                padding: 10px;
+                margin-top: 10px;
+                border-radius: 5px;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="qr-container">
+            <h2>{student.full_name}</h2>
+            <h3>Student ID: {student.student_id}</h3>
+            <img src="data:image/png;base64,{qr_image}" alt="QR Code"/>
+            <div class="info">
+                <p>📱 Scan this QR code for attendance</p>
+                <p>🎓 Grade: {student.grade}</p>
+                <div class="token">
+                    QR Contains: {qr_token}
+                </div>
+            </div>
+            <button onclick="downloadQR()">💾 Download QR Code</button>
+            <button onclick="window.print()">🖨️ Print QR Code</button>
+        </div>
+        
+        <script>
+            function downloadQR() {{
+                const img = document.querySelector('img');
+                const link = document.createElement('a');
+                link.download = 'qr_{student.full_name}_{student.student_id}.png';
+                link.href = img.src;
+                link.click();
+            }}
+        </script>
+    </body>
+    </html>
+    """
+    
+    return HTMLResponse(content=html_content)
+
+# Download QR code as image
+@router.get("/qr/download/{student_id}")
+async def download_qr_code(
+    student_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """Download QR code as PNG image"""
+    
+    result = await db.execute(
+        select(Student).where(Student.student_id == student_id)
+    )
+    student = result.scalar_one_or_none()
+    
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    
+    # Get QR token
+    result = await db.execute(
+        select(QRCode).where(QRCode.student_id == student_id)
+    )
+    qr_record = result.scalar_one_or_none()
+    
+    if not qr_record:
+        qr_token = generate_qr_token(student_id)
+        qr_record = QRCode(student_id=student_id, qr_token=qr_token)
+        db.add(qr_record)
+        await db.commit()
+    else:
+        qr_token = qr_record.qr_token
+    
+    qr_image_base64 = create_qr_code_image(qr_token)
+    
+    # Convert base64 to bytes
+    qr_bytes = base64.b64decode(qr_image_base64)
+    
+    # Save to temporary file
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.png') as tmp_file:
+        tmp_file.write(qr_bytes)
+        tmp_path = tmp_file.name
+    
+    return FileResponse(
+        path=tmp_path,
+        filename=f"qr_code_{student.full_name}_{student_id}.png",
+        media_type="image/png",
+        background=lambda: os.unlink(tmp_path)
+    )
+
+# QR Code Check-in (Driver scans QR)
+@router.post("/qr/checkin")
+async def qr_checkin(
+    qr_token: str,  # This will be just the student ID
+    bus_id: int,
+    route_id: int,
+    current_user = Depends(login_required),
+    db: AsyncSession = Depends(get_db)
+):
+    """Check-in student by scanning QR code (QR contains student ID)"""
+    
+    try:
+        # Get student from QR token (student ID)
+        student = await get_student_from_qr_token(qr_token, db)
+        
+        # Create check-in request
+        request = CheckInRequest(
+            student_id=student.student_id,
+            bus_id=bus_id,
+            route_id=route_id,
+            qr_code=qr_token
+        )
+        
+        # Call existing check-in logic
+        return await check_in(request, current_user, db)
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# QR Code Check-out (Driver scans QR)
+@router.post("/qr/checkout")
+async def qr_checkout(
+    qr_token: str,  # This will be just the student ID
+    bus_id: int,
+    current_user = Depends(login_required),
+    db: AsyncSession = Depends(get_db)
+):
+    """Check-out student by scanning QR code (QR contains student ID)"""
+    
+    try:
+        # Get student from QR token (student ID)
+        student = await get_student_from_qr_token(qr_token, db)
+        
+        # Create check-out request
+        request = CheckOutRequest(
+            student_id=student.student_id,
+            bus_id=bus_id,
+            qr_code=qr_token
+        )
+        
+        # Call existing check-out logic
+        return await check_out(request, current_user, db)
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# Simple test endpoint for QR check-in (no auth)
+@router.post("/qr/test-checkin")
+async def test_qr_checkin(
+    qr_token: str,
+    bus_id: int,
+    route_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """Test QR check-in without authentication"""
+    
+    try:
+        student = await get_student_from_qr_token(qr_token, db)
+        
+        request = CheckInRequest(
+            student_id=student.student_id,
+            bus_id=bus_id,
+            route_id=route_id,
+            qr_code=qr_token
+        )
+        
+        # Call test check-in logic
+        return await test_checkin_no_auth(request, db)
+        
+    except ValueError as e:
+        return {"error": str(e)}

@@ -13,3 +13,4 @@ from .feedback import Feedback
 from .route_history import RouteHistory
 from .payment_plan import PaymentPlan
 from .payment import Payment
+from .qr_code import QRCode

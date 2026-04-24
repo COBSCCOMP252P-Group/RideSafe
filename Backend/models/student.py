@@ -16,3 +16,5 @@ class Student(Base):
     parent_id = Column(Integer, ForeignKey("parents.parent_id"))
     status = Column(String(20), default=StudentStatus.ACTIVE)
     index_no = Column(String(50))
+    # Relationship to QR code
+    qr_code = relationship("QRCode", back_populates="student", uselist=False)
