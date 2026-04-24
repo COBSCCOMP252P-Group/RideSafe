@@ -24,6 +24,7 @@ import {
 'lucide-react';
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
+  const [paymentView, setPaymentView] = useState<'plans' | 'history'>('plans');
   const tabs = [
   {
     id: 'overview',
@@ -52,13 +53,8 @@ export function AdminDashboard() {
     badge: 3
   },
   {
-    id: 'payment-plans',
-    label: 'Payment Plans',
-    icon: <CreditCard className="h-4 w-4" />
-  },
-  {
     id: 'payments',
-    label: 'All Payments',
+    label: 'Payments',
     icon: <CreditCard className="h-4 w-4" />
   }];
 
@@ -458,7 +454,49 @@ export function AdminDashboard() {
               duration: 0.3
             }}>
 
-              <PaymentsViewer />
+              <div className="space-y-6">
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => setPaymentView('plans')}
+                    variant={paymentView === 'plans' ? 'default' : 'outline'}
+                    className={paymentView === 'plans' ? 'bg-gradient-to-r from-primary-600 to-primary-700' : ''}
+                  >
+                    Payment Plans
+                  </Button>
+                  <Button
+                    onClick={() => setPaymentView('history')}
+                    variant={paymentView === 'history' ? 'default' : 'outline'}
+                    className={paymentView === 'history' ? 'bg-gradient-to-r from-primary-600 to-primary-700' : ''}
+                  >
+                    Payment History
+                  </Button>
+                </div>
+
+                <AnimatePresence mode="wait">
+                  {paymentView === 'plans' && (
+                    <motion.div
+                      key="plans"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <PaymentPlansManager />
+                    </motion.div>
+                  )}
+                  {paymentView === 'history' && (
+                    <motion.div
+                      key="history"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <PaymentsViewer />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </motion.div>
           }
         </AnimatePresence>
