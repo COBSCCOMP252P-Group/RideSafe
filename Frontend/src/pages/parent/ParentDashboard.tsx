@@ -42,6 +42,45 @@ export function ParentDashboard() {
       badge: 3
     }
   ];
+import { PaymentForm } from '../../components/parent/PaymentForm';
+import { useStudents } from '../../hooks/useAttendance';
+import { MapPin, Calendar, Bell, CalendarX, CreditCard } from 'lucide-react';
+export function ParentDashboard() {
+  const [activeTab, setActiveTab] = useState('overview');
+  const { students, loading: studentsLoading, error: studentsError } = useStudents();
+  const child = students && students.length > 0 ? students[0] : null;
+  const tabs = [
+  {
+    id: 'overview',
+    label: 'Overview',
+    icon: <MapPin className="h-4 w-4" />
+  },
+  {
+    id: 'track',
+    label: 'Track Bus',
+    icon: <MapPin className="h-4 w-4" />
+  },
+  {
+    id: 'attendance',
+    label: 'Attendance',
+    icon: <Calendar className="h-4 w-4" />
+  },
+  {
+    id: 'absences',
+    label: 'Plan Absences',
+    icon: <CalendarX className="h-4 w-4" />
+  },
+  {
+    id: 'payments',
+    label: 'Payment',
+    icon: <CreditCard className="h-4 w-4" />
+  },
+  {
+    id: 'notifications',
+    label: 'Notifications',
+    icon: <Bell className="h-4 w-4" />,
+    badge: 3
+  }];
 
   const pageVariants = {
     initial: {
@@ -105,6 +144,12 @@ export function ParentDashboard() {
             {/* Shine effect */}
             <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
           </motion.button>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-primary-800 bg-clip-text text-transparent">
+            Welcome back, Sarah!
+          </h1>
+          <p className="text-gray-600 mt-2">
+            Manage {child ? child.full_name : 'your child'}'s school transport
+          </p>
         </motion.div>
 
         {/* Tabs */}
@@ -146,19 +191,19 @@ export function ParentDashboard() {
                 <div className="flex items-center space-x-4">
                   <div className="relative">
                     <img
-                      src={child.avatar}
-                      alt={child.name}
-                      className="h-20 w-20 rounded-2xl object-cover border-4 border-primary-100"
-                    />
+                    src={child ? `https://i.pravatar.cc/150?u=student-${child.student_id}` : 'https://i.pravatar.cc/150?u=placeholder'}
+                    alt={child ? child.full_name : 'Student'}
+                    className="h-20 w-20 rounded-2xl object-cover border-4 border-primary-100" />
+
                     <div className="absolute -bottom-1 -right-1 h-6 w-6 bg-green-500 rounded-full border-4 border-white"></div>
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-gray-900">
-                      {child.name}
+                      {child ? child.full_name : 'Student name'}
                     </h3>
-                    <p className="text-sm text-gray-500">{child.grade} Grade</p>
+                    <p className="text-sm text-gray-500">{child ? `${child.grade ?? 'N/A'} Grade` : 'Grade unavailable'}</p>
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium mt-2 bg-gradient-to-r from-primary-100 to-primary-200 text-primary-800 border border-primary-300">
-                      Route A • {child.status.replace('_', ' ')}
+                      Route A • {child ? child.status.replace('_', ' ') : 'active'}
                     </span>
                   </div>
                 </div>
@@ -258,6 +303,21 @@ export function ParentDashboard() {
               }}
             >
               <AdvancedAbsenceCalendar />
+            </motion.div>
+          }
+
+          {activeTab === 'payments' &&
+          <motion.div
+            key="payments"
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={{
+              duration: 0.3
+            }}>
+
+              <PaymentForm />
             </motion.div>
           }
 

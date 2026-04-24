@@ -44,44 +44,42 @@ export function AttendanceHistory() {
           <tbody>
 
             {history.slice(0, 5).map((record, idx) => (
-              <tr
-                key={record.id}
-                className={`transition-all duration-200 ${idx % 2 === 0 ? 'bg-purple-50' : 'bg-white'} hover:shadow-md hover:scale-[1.01] rounded-lg`}
-              >
-
-                {/* Date */}
+              <tr key={record.attendance_id || idx}>
                 <td className="px-6 py-4 text-sm text-gray-800">
                   <div className="flex items-center">
                     <div className="h-8 w-8 rounded-lg bg-purple-200 flex items-center justify-center mr-3">
-                      <Calendar className="h-4 w-4 text-purple-700" />
+                      {/* Calendar icon removed */}
                     </div>
-                    <span className="font-medium">{new Date(record.date).toLocaleDateString()}</span>
+                    <span className="font-medium">
+                      {new Date(record.date).toLocaleDateString()}
+                    </span>
                   </div>
-                </td>
-
-                {/* Status */}
+                 </td>
+                
                 <td className="px-6 py-4">
                   <Badge
                     variant={
-                      record.status === 'present'
-                        ? 'success'
-                        : record.status === 'absent'
-                        ? 'danger'
-                        : 'secondary'
+                      record.status === 'PRESENT' ? 'success' :
+                      record.status === 'ABSENT' ? 'danger' : 'secondary'
                     }
                     className="px-3 py-1 text-sm"
                   >
-                    {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+                    {record.status.toLowerCase()}
                   </Badge>
-                </td>
-
-                {/* Check In */}
-                <td className="px-6 py-4 text-sm text-gray-700 font-medium">{record.checkIn || '-'}</td>
-
-                {/* Check Out */}
-                <td className="px-6 py-4 text-sm text-gray-700 font-medium">{record.checkOut || '-'}</td>
-
-              </tr>
+                 </td>
+                
+                <td className="px-6 py-4 text-sm text-gray-700 font-medium">
+                  {record.check_in_time ? 
+                    new Date(`1970-01-01T${record.check_in_time}`).toLocaleTimeString() : 
+                    '-'}
+                 </td>
+                
+                <td className="px-6 py-4 text-sm text-gray-700 font-medium">
+                  {record.check_out_time ? 
+                    new Date(`1970-01-01T${record.check_out_time}`).toLocaleTimeString() : 
+                    '-'}
+                 </td>
+               </tr>
             ))}
 
           </tbody>

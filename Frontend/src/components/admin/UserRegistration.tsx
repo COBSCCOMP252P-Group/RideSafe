@@ -8,6 +8,9 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Badge } from '../ui/Badge';
 import { MOCK_USERS } from '../../utils/mockData';
+import { useEffect } from 'react';
+import { getAllUsers, createAdminUser, createDriverUser, createParentAndStudent, deleteUser } from '../../services/userService';
+import { mapBackendUserToUi } from '../../utils/userMappers';
 import { User, UserRole } from '../../types';
 import {
   UserPlus,
@@ -24,96 +27,145 @@ import {
   BoxIcon } from
 'lucide-react';
 export function UserRegistration() {
-  const [users, setUsers] = useState(MOCK_USERS);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(''); 
   const [selectedRole, setSelectedRole] = useState<UserRole | 'all'>('all');
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      const data = await getAllUsers();
+      setUsers(data.map(mapBackendUserToUi));
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Form state
   const [formData, setFormData] = useState({
-  name: '',
-  email: '',
-  role: 'parent' as UserRole,
-  phone: '',
-  address: '',
-  password: '',
-  studentIndex: '',
-  studentName: '',
-  studentGrade: '',
-  vehicleNo: '',
-  emergencyContact: ''
+    username: '',
+    name: '',
+    email: '',
+    role: 'parent',
+    phone: '',
+    address: '',
+    password: '',
+    confirmPassword: '',
+    studentIndex: '',
+    studentName: '',
+    studentGrade: '',
+    vehicleNo: '',
+    emergencyContact: ''
   });
-  const handleOpenModal = (user?: User) => {
-  if (user) {
-    setEditingUser(user);
-    setFormData({
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      phone: '',
-      address: '',
-      password: '',
-      studentIndex: '',
-      studentName: '',
-      studentGrade: '',
-      vehicleNo: '',
-      emergencyContact: ''
-    });
-  } else {
+
+const handleOpenModal = (user?: User) => {
+    if (user) {
+      setEditingUser(user);
+      setFormData({
+        username: user.username || '',
+        name: user.name || '',
+        email: user.email || '',
+        role: user.role || 'parent',
+        phone: user.phone || '',
+        address: '',
+        password: '',
+        confirmPassword: '',
+        studentIndex: '',
+        studentName: '',
+        studentGrade: '',
+        vehicleNo: '',
+        emergencyContact: ''
+      });
+    } else {
+      setEditingUser(null);
+      setFormData({
+        username: '',
+        name: '',
+        email: '',
+        role: 'parent',
+        phone: '',
+        address: '',
+        password: '',
+        confirmPassword: '',
+        studentIndex: '',
+        studentName: '',
+        studentGrade: '',
+        vehicleNo: '',
+        emergencyContact: ''
+      });
+    }
+  setIsModalOpen(true);
+};
+
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  try {
+    if (formData.password !== formData.confirmPassword) {
+      alert('Password and Confirm Password do not match');
+      return;
+    }
+
+    if (formData.role === 'admin') {
+      await createAdminUser(formData);
+    } else if (formData.role === 'driver') {
+      await createDriverUser(formData);
+    } else if (formData.role === 'parent') {
+      await createParentAndStudent(formData);
+    }
+
+    await loadUsers();
+
+    setIsModalOpen(false);
     setEditingUser(null);
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000);
+
     setFormData({
+      username: '',
       name: '',
       email: '',
       role: 'parent',
       phone: '',
       address: '',
       password: '',
+      confirmPassword: '',
       studentIndex: '',
       studentName: '',
       studentGrade: '',
       vehicleNo: '',
       emergencyContact: ''
     });
+  } catch (err: any) {
+    console.error(err);
+    alert(err.message || 'Failed to save user');
   }
-  setIsModalOpen(true);
 };
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingUser) {
-      // Update existing user
-      setUsers(
-        users.map((u) =>
-        u.id === editingUser.id ?
-        {
-          ...u,
-          name: formData.name,
-          email: formData.email,
-          role: formData.role
-        } :
-        u
-        )
-      );
-    } else {
-      // Add new user
-      const newUser: User = {
-        id: `u${users.length + 1}`,
-        name: formData.name,
-        email: formData.email,
-        role: formData.role,
-        avatar: `https://i.pravatar.cc/150?u=${formData.email}`
-      };
-      setUsers([...users, newUser]);
-    }
-    setIsModalOpen(false);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
-  };
-  const handleDelete = (userId: string) => {
+  
+  const handleDelete = async (userId: number) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
-      setUsers(users.filter((u) => u.id !== userId));
+      try {
+        await deleteUser(userId);
+        await loadUsers();
+      } catch (err: any) {
+        console.error(err);
+        alert(err.message || 'Failed to delete user');
+      }
     }
   };
+
   const filteredUsers = users.filter((user) => {
     const matchesSearch =
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -121,6 +173,7 @@ export function UserRegistration() {
     const matchesRole = selectedRole === 'all' || user.role === selectedRole;
     return matchesSearch && matchesRole;
   });
+
   const getRoleIcon = (role: UserRole) => {
     switch (role) {
       case 'parent':
@@ -373,7 +426,7 @@ export function UserRegistration() {
                     whileTap={{
                       scale: 0.9
                     }}
-                    onClick={() => handleDelete(user.id)}
+                    onClick={() => handleDelete(user.backendUserId)}
                     className="p-2 rounded-lg bg-white/50 backdrop-blur-sm hover:bg-red-100 text-red-600 transition-all duration-200 border border-white/20">
 
                       <Trash2 className="h-4 w-4" />
@@ -655,6 +708,61 @@ export function UserRegistration() {
                   setFormData({
                     ...formData,
                     password: e.target.value
+                  })
+                }
+                required
+                placeholder="Confirm password"
+                className="bg-white border border-gray-200 rounded-xl shadow-sm"
+              />
+            </div>
+
+          {/* Security */}
+          <div>
+            <h4 className="text-lg font-semibold text-gray-900 mb-5">
+              Security
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+             <Input
+                label="Username"
+                type="text"
+                value={formData.username}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    username: e.target.value
+                  })
+                }
+                required
+                placeholder="Enter username"
+                className="bg-white border border-gray-200 rounded-xl shadow-sm"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mt-6">
+              <Input
+                label="Password"
+                type="password"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    password: e.target.value
+                  })
+                }
+                required
+                placeholder="Enter password"
+                className="bg-white border border-gray-200 rounded-xl shadow-sm"
+              />
+
+              <Input
+                label="Confirm Password"
+                type="password"
+                value={formData.confirmPassword}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    confirmPassword: e.target.value
                   })
                 }
                 required

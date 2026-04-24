@@ -3,12 +3,10 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 import enum
 from models.base import Base
-
 class AbsenceStatus(str, enum.Enum):
-    PENDING = "pending"
-    APPROVED = "approved"
-    REJECTED = "rejected"
-
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
 class Absence(Base):
     __tablename__ = "absences"
 
