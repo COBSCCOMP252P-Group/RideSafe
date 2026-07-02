@@ -11,4 +11,3 @@ class RouteStop(Base):
     latitude = Column(DECIMAL(9, 6))
     longitude = Column(DECIMAL(9, 6))
     stop_order = Column(Integer)
-    expected_time = Column(Time, nullable=True)  # Expected arrival time at this stop

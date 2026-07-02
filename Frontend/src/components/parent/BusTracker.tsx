@@ -14,8 +14,12 @@ interface BusLocation {
   nextStop: string;
   eta: string;
 }
+type BusTrackerProps = {
+  studentId?: number;
+};
 
-export function BusTracker() {
+
+export function BusTracker({ studentId }: BusTrackerProps) {
   const navigate = useNavigate();
 
   const [location, setLocation] = useState<BusLocation>({
