@@ -9,6 +9,8 @@ from .attendance import router as attendance_router
 from .student_location import router as student_location_router
 from .payment import router as payment_router
 from .incident import router as incident_router
+from .route_optimizer import router as route_optimizer_router
+from .route import router as route_router
 
 
 routers = [
@@ -23,5 +25,7 @@ routers = [
     student_location_router,
     payment_router,
     incident_router,
-    attendance_router
+    attendance_router,
+    route_optimizer_router,
+    route_router
 ]
