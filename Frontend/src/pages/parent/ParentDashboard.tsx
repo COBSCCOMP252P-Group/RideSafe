@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tabs } from '../../components/ui/Tabs';
+import { useAuth } from '../../hooks/useAuth';
 import { BusTracker } from '../../components/parent/BusTracker';
 import { NotificationsList } from '../../components/parent/NotificationsList';
 import { AttendanceHistory } from '../../components/parent/AttendanceHistory';
@@ -19,7 +20,10 @@ import SetLocationModal from '../../components/layout/SetLocationModal';
 import { PaymentForm } from '../../components/parent/PaymentForm';
 import { useStudents } from '../../hooks/useAttendance';
 
+
 export function ParentDashboard() {
+
+   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
@@ -101,7 +105,7 @@ export function ParentDashboard() {
         >
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-primary-800 bg-clip-text text-transparent">
-              Welcome back, Sarah!
+              {user.name ? `Welcome, ${user.name.split(' ')[0]}!` : 'Welcome!'}
             </h1>
 
             <p className="text-gray-600 mt-2">
