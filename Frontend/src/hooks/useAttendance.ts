@@ -34,7 +34,7 @@ export interface QRCodeResponse {
 export interface QRCheckRequest {
   qr_token: string;
   bus_id: number;
-  route_id?: number; // Optional for check-out
+  route_id?: number; 
 }
 
 export function useAttendance() {
@@ -98,7 +98,7 @@ export function useAttendance() {
 
   
 
-  // 🆕 QR Code Check-in
+  //  QR Code Check-in
   const qrCheckIn = async (qr_token: string, bus_id: number, route_id: number) => {
     setLoading(true);
     setError(null);
@@ -131,7 +131,7 @@ export function useAttendance() {
     }
   };
 
-  // 🆕 QR Code Check-out
+  //  QR Code Check-out
   const qrCheckOut = async (qr_token: string, bus_id: number) => {
     setLoading(true);
     setError(null);
@@ -164,7 +164,7 @@ export function useAttendance() {
     }
   };
 
-  // 🆕 Generate QR Code for a student
+  //  Generate QR Code for a student
   const generateQRCode = async (student_id: number): Promise<QRCodeResponse> => {
     setLoading(true);
     setError(null);
@@ -194,7 +194,7 @@ export function useAttendance() {
     }
   };
 
-  // 🆕 Get QR Code as base64 image
+  //  Get QR Code as base64 image
   const getQRCodeImage = async (student_id: number): Promise<string> => {
     setLoading(true);
     setError(null);
@@ -219,7 +219,7 @@ export function useAttendance() {
     }
   };
 
-  // 🆕 Download QR Code as PNG
+  //  Download QR Code as PNG
   const downloadQRCode = async (student_id: number, student_name: string) => {
     setLoading(true);
     setError(null);
@@ -237,7 +237,7 @@ export function useAttendance() {
       // Get the blob from response
       const blob = await response.blob();
       
-      // Create download link
+      
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -359,20 +359,71 @@ export function useAttendance() {
     }
   };
 
+const getScheduledAbsences = async (studentId: number) => {
+  setLoading(true);
+  setError(null);
+  try {
+    const response = await fetch(
+      `${API_BASE}/api/v1/attendance/scheduled?student_id=${studentId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      }
+    );
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'Failed to fetch scheduled absences');
+    }
+    const data = await response.json();
+    return data; // Expecting array of { date: 'YYYY-MM-DD', ... }
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'Failed to fetch scheduled absences');
+    throw err;
+  } finally {
+    setLoading(false);
+  }
+};
+const getStudentAbsences = async (studentId: number) => {
+  setLoading(true);
+  setError(null);
+  try {
+    const response = await fetch(
+      `${API_BASE}/api/v1/attendance/absences/${studentId}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      }
+    );
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'Failed to fetch absences');
+    }
+    return await response.json();
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'Failed to fetch absences');
+    throw err;
+  } finally {
+    setLoading(false);
+  }
+};
+
   return {
-    // Existing functions
+  
     checkIn,
     checkOut,
     getAttendanceHistory,
     getAttendanceSummary,
     reportAbsence,
-    // 🆕 QR Code functions
     qrCheckIn,
+     getScheduledAbsences,
+     getStudentAbsences,
     qrCheckOut,
     generateQRCode,
     getQRCodeImage,
     downloadQRCode,
-    // State
+    
     loading,
     error
   };
