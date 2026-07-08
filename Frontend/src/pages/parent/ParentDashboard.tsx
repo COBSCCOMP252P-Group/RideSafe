@@ -13,12 +13,14 @@ import {
   CalendarX,
   Map,
   Plus,
-  ChevronDown
+  ChevronDown,
+  QrCode,
 } from 'lucide-react';
 
 import SetLocationModal from '../../components/layout/SetLocationModal';
 import { PaymentForm } from '../../components/parent/PaymentForm';
 import { useStudents } from '../../hooks/useAttendance';
+import { useAttendance } from '../../hooks/useAttendance'; 
 
 
 export function ParentDashboard() {
@@ -28,8 +30,10 @@ export function ParentDashboard() {
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
   const { students, loading: studentsLoading } = useStudents();
+  const { downloadQRCode, loading } = useAttendance();
 
   const [selectedStudentId, setSelectedStudentId] = useState<number | null>(null);
+  
 
   const selectedChild = useMemo(() => {
     if (!students || students.length === 0) return null;
@@ -42,6 +46,14 @@ export function ParentDashboard() {
       students[0]
     );
   }, [students, selectedStudentId]);
+  const handleDownloadQR = async () => {
+    if (!selectedChild) return;
+    try {
+      await downloadQRCode(selectedChild.student_id, selectedChild.full_name);
+    } catch (err: any) {
+      alert('Failed to download QR code: ' + err.message);
+    }
+  };
 
   const tabs = [
     {
@@ -136,6 +148,23 @@ export function ParentDashboard() {
               </div>
             )}
           </div>
+                {/* Download QR Code Button */}
+            <motion.button
+              onClick={handleDownloadQR}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              disabled={!selectedChild || loading}
+              className="group relative px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ boxShadow: '0 10px 25px -5px rgba(168, 85, 247, 0.3)' }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative flex items-center gap-2">
+                <QrCode className="h-5 w-5 group-hover:rotate-12 transition-transform duration-300" />
+                <span>Download QR</span>
+              </div>
+              <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+            </motion.button>
+
 
           {/* Manage Locations Button */}
           <motion.button
